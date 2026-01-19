@@ -9,8 +9,17 @@
         .container { max-width: 900px; margin: 0 auto; }
         
         /* Header */
-        h1 { font-size: 1.5rem; text-align: center; margin-bottom: 20px; font-weight: 800; letter-spacing: -0.5px; }
+        h1 { font-size: 1.5rem; text-align: center; margin-bottom: 10px; font-weight: 800; letter-spacing: -0.5px; }
         
+        /* Settings Area (Backup/Restore) */
+        .settings-bar {
+            display: flex; justify-content: center; gap: 10px; margin-bottom: 20px;
+        }
+        .btn-setting {
+            font-size: 0.8rem; background: #edf2f7; color: #4a5568; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 5px;
+        }
+        .btn-setting:hover { background: #e2e8f0; }
+
         /* Calendar Grid */
         .calendar-grid {
             display: grid;
@@ -65,7 +74,7 @@
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.5); z-index: 200;
-            align-items: flex-end; /* Bottom sheet style */
+            align-items: flex-end; 
         }
         .modal-content {
             background: white; width: 100%; max-width: 600px; margin: 0 auto;
@@ -79,7 +88,6 @@
         }
         .history-item:hover { background: #f7fafc; }
         .history-name { font-weight: bold; }
-        .history-link { font-size: 0.8rem; color: #aaa; margin-left: 10px; }
 
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -88,9 +96,13 @@
 <body>
 
 <div class="container">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h1>Weekly Menu 🗓️</h1>
-        <button onclick="clearWeek()" style="color:#e53e3e; background:none; border:none; font-size:0.8rem;">Reset Week</button>
+    <h1>Weekly Menu 🗓️</h1>
+    
+    <div class="settings-bar">
+        <button onclick="exportData()" class="btn-setting">📤 Backup</button>
+        <button onclick="document.getElementById('fileInput').click()" class="btn-setting">📥 Restore</button>
+        <button onclick="clearWeek()" class="btn-setting" style="color:#e53e3e;">↻ Reset Week</button>
+        <input type="file" id="fileInput" style="display:none" onchange="importData(this)">
     </div>
 
     <div id="calendarView" class="calendar-grid"></div>
@@ -123,7 +135,6 @@
             <h2>My Library 📚</h2>
             <button onclick="document.getElementById('historyModal').style.display='none'" style="border:none; background:none; font-size:1.5rem;">×</button>
         </div>
-        <p style="font-size:0.8rem; color:#718096; margin-bottom:10px;">Tap to add to <span id="targetDayLabel" style="font-weight:bold; color:#2d3748;">Current Day</span></p>
         <div id="historyList"></div>
     </div>
 </div>
@@ -140,7 +151,6 @@
         days.forEach(day => {
             const daysDishes = planner.filter(d => d.day === day);
             let dishesHtml = '';
-            
             daysDishes.forEach(dish => {
                 let linkBtn = dish.link ? `<a href="${dish.link}" target="_blank" class="btn-link">LINK ↗</a>` : '';
                 dishesHtml += `
@@ -153,28 +163,16 @@
                     </div>
                 `;
             });
-
             if(daysDishes.length === 0) dishesHtml = '<div style="color:#cbd5e0; font-size:0.8rem; text-align:center; padding:10px;">-</div>';
-
-            view.innerHTML += `
-                <div class="day-card">
-                    <div class="day-header">${day}</div>
-                    <div class="day-body">${dishesHtml}</div>
-                </div>
-            `;
+            view.innerHTML += `<div class="day-card"><div class="day-header">${day}</div><div class="day-body">${dishesHtml}</div></div>`;
         });
     }
 
     function toggleLinkInput() {
         const row = document.getElementById('linkInputRow');
         const btn = document.getElementById('linkToggleBtn');
-        if (row.style.display === 'block') {
-            row.style.display = 'none';
-            btn.classList.remove('active');
-        } else {
-            row.style.display = 'block';
-            btn.classList.add('active');
-        }
+        if (row.style.display === 'block') { row.style.display = 'none'; btn.classList.remove('active'); } 
+        else { row.style.display = 'block'; btn.classList.add('active'); }
     }
 
     function addDish() {
@@ -182,47 +180,28 @@
         const nameInput = document.getElementById('dishName');
         const linkInput = document.getElementById('notionLink');
         const name = nameInput.value;
-        const link = linkInput.value;
-        
         if(name) {
-            // Add to Planner
-            planner.push({ id: Date.now(), day: day, name: name, link: link });
-            
-            // Add to History (if unique)
-            const exists = history.some(h => h.name === name);
-            if(!exists) {
-                history.push({ name: name, link: link });
+            planner.push({ id: Date.now(), day: day, name: name, link: linkInput.value });
+            if(!history.some(h => h.name === name)) {
+                history.push({ name: name, link: linkInput.value });
                 localStorage.setItem('myMenuApp_history', JSON.stringify(history));
             }
-
-            save();
-            render();
-            nameInput.value = '';
-            linkInput.value = '';
+            save(); render();
+            nameInput.value = ''; linkInput.value = '';
         }
     }
 
     // --- History Functions ---
-
     function openHistory() {
         const modal = document.getElementById('historyModal');
         const list = document.getElementById('historyList');
-        const targetDay = document.getElementById('daySelect').value;
-        
-        document.getElementById('targetDayLabel').innerText = targetDay;
         list.innerHTML = '';
-
         if(history.length === 0) {
-            list.innerHTML = '<div style="padding:20px; text-align:center; color:#aaa;">No history yet.<br>Add dishes to build your library!</div>';
+            list.innerHTML = '<div style="padding:20px; text-align:center; color:#aaa;">No history yet.</div>';
         } else {
             history.forEach(item => {
                 let linkBadge = item.link ? '🔗' : '';
-                list.innerHTML += `
-                    <div class="history-item" onclick="addFromHistory('${item.name}', '${item.link || ''}')">
-                        <span class="history-name">${item.name} ${linkBadge}</span>
-                        <span style="color:#4299e1; font-weight:bold;">+ Add</span>
-                    </div>
-                `;
+                list.innerHTML += `<div class="history-item" onclick="addFromHistory('${item.name}', '${item.link || ''}')"><span class="history-name">${item.name} ${linkBadge}</span><span style="color:#4299e1;">+ Add</span></div>`;
             });
         }
         modal.style.display = 'flex';
@@ -231,35 +210,47 @@
     function addFromHistory(name, link) {
         const day = document.getElementById('daySelect').value;
         planner.push({ id: Date.now(), day: day, name: name, link: link });
-        save();
-        render();
+        save(); render();
         document.getElementById('historyModal').style.display = 'none';
     }
+    function closeHistory(e) { if(e.target.id === 'historyModal') document.getElementById('historyModal').style.display = 'none'; }
 
-    function closeHistory(e) {
-        if(e.target.id === 'historyModal') {
-            document.getElementById('historyModal').style.display = 'none';
-        }
+    // --- Backup & Utils ---
+    function removeDish(id) { planner = planner.filter(d => d.id !== id); save(); render(); }
+    function clearWeek() { if(confirm('Clear current week?')) { planner = []; save(); render(); } }
+    function save() { localStorage.setItem('myMenuApp_planner', JSON.stringify(planner)); }
+
+    function exportData() {
+        const data = { planner: planner, history: history };
+        const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "menu-backup.json";
+        a.click();
+        URL.revokeObjectURL(url);
     }
 
-    // --- Utils ---
-
-    function removeDish(id) {
-        planner = planner.filter(d => d.id !== id);
-        save();
-        render();
-    }
-
-    function clearWeek() {
-        if(confirm('Start a new week?')) {
-            planner = [];
-            save();
-            render();
-        }
-    }
-
-    function save() {
-        localStorage.setItem('myMenuApp_planner', JSON.stringify(planner));
+    function importData(input) {
+        const file = input.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                if(data.planner && data.history) {
+                    planner = data.planner;
+                    history = data.history;
+                    save();
+                    localStorage.setItem('myMenuApp_history', JSON.stringify(history));
+                    render();
+                    alert('Data restored successfully!');
+                } else {
+                    alert('Invalid file format');
+                }
+            } catch(err) { alert('Error reading file'); }
+        };
+        reader.readAsText(file);
     }
 
     render();
