@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我が家の献立表</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+        .card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h2 { font-size: 1.2rem; margin-top: 0; }
+        .btn { display: inline-block; background: #007bff; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; margin-top: 10px; }
+        input { padding: 8px; width: 80%; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>今週の献立</h1>
+
+    <div class="card">
+        <h3>料理を追加</h3>
+        <input type="text" id="dishName" placeholder="料理名（例：ハンバーグ）"><br>
+        <input type="text" id="notionLink" placeholder="NotionのURL"><br>
+        <button onclick="addDish()" class="btn">追加する</button>
+    </div>
+
+    <div id="menuList"></div>
+
+    <script>
+        // 保存されたデータを読み込む
+        let dishes = JSON.parse(localStorage.getItem('myMenuApp_dishes')) || [];
+
+        function render() {
+            const list = document.getElementById('menuList');
+            list.innerHTML = '';
+            dishes.forEach((dish, index) => {
+                let linkHtml = dish.link ? `<a href="${dish.link}" target="_blank" class="btn">Notionレシピを見る</a>` : '';
+                list.innerHTML += `
+                    <div class="card">
+                        <h2>${dish.name}</h2>
+                        ${linkHtml}
+                        <br><button onclick="removeDish(${index})" style="color:red; background:none; border:none; margin-top:10px;">削除</button>
+                    </div>
+                `;
+            });
+        }
+
+        function addDish() {
+            const name = document.getElementById('dishName').value;
+            const link = document.getElementById('notionLink').value;
+            
+            if(name) {
+                dishes.push({ name: name, link: link });
+                localStorage.setItem('myMenuApp_dishes', JSON.stringify(dishes)); // スマホに保存
+                render();
+                document.getElementById('dishName').value = '';
+                document.getElementById('notionLink').value = '';
+            }
+        }
+
+        function removeDish(index) {
+            dishes.splice(index, 1);
+            localStorage.setItem('myMenuApp_dishes', JSON.stringify(dishes));
+            render();
+        }
+
+        // 最初に一回表示する
+        render();
+    </script>
+</body>
+</html>
