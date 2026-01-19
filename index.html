@@ -3,24 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#f8f9fa">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>Monthly Menu</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍳</text></svg>">
+    <link rel="apple-touch-icon" href="icon.png">
+
     <style>
-        /* Layout Adjustments for Narrow Screens */
+        /* Layout Adjustments for App-like feel */
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            padding: 5px; /* Reduced padding */
-            padding-bottom: 160px; 
+            padding: 5px; 
+            padding-bottom: 160px; /* Safe area for input bar */
+            padding-top: env(safe-area-inset-top); /* Notch support */
             background: #f8f9fa; 
             color: #2d3748; 
-            overflow-x: hidden; /* Prevent horizontal scroll */
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent; /* Remove tap highlight */
+            user-select: none; /* App-like feel (no text selection) */
         }
+        
+        /* Allow text selection in inputs */
+        input, textarea { user-select: text; }
+
         .container { max-width: 1000px; margin: 0 auto; }
         
         /* Header */
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 5px;}
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 5px;}
         .month-nav { display: flex; align-items: center; gap: 10px; font-size: 1.0rem; font-weight: bold; }
-        .btn-nav { background: none; border: none; font-size: 1.2rem; padding: 5px; cursor: pointer; color: #4a5568; }
-        .btn-setting { font-size: 0.75rem; background: #edf2f7; border: none; padding: 6px 8px; border-radius: 4px; cursor: pointer; white-space: nowrap;}
+        .btn-nav { background: none; border: none; font-size: 1.4rem; padding: 5px 10px; cursor: pointer; color: #4a5568; }
+        .btn-setting { font-size: 0.75rem; background: #edf2f7; border: none; padding: 8px 12px; border-radius: 20px; cursor: pointer; white-space: nowrap; font-weight:600;}
 
         /* Calendar Grid */
         .calendar-grid {
@@ -29,38 +44,37 @@
             gap: 1px;
             background: #cbd5e0;
             border: 1px solid #cbd5e0;
-            border-radius: 6px;
+            border-radius: 8px;
             overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
         }
         
         .weekday-header {
-            background: #f7fafc; padding: 6px 2px; text-align: center; font-size: 0.7rem; font-weight: bold; color: #718096;
+            background: #f7fafc; padding: 8px 2px; text-align: center; font-size: 0.7rem; font-weight: bold; color: #718096;
         }
         
         /* Date Cell */
         .day-cell {
-            background: white; min-height: 70px; padding: 2px; position: relative; cursor: pointer;
+            background: white; min-height: 75px; padding: 2px; position: relative; cursor: pointer;
             display: flex; flex-direction: column; gap: 2px;
         }
+        .day-cell:active { background: #f7fafc; } /* Touch feedback */
         .day-cell.other-month { background: #f9fafb; color: #cbd5e0; }
         .day-cell.today { background: #fffaf0; }
         .day-cell.selected { background: #ebf8ff; box-shadow: inset 0 0 0 2px #4299e1; }
         
         .date-number { font-size: 0.7rem; font-weight: bold; margin-bottom: 1px; padding-left: 2px; }
         
-        /* Dish Chips - Compact Mode */
+        /* Dish Chips */
         .dish-chip {
-            font-size: 0.65rem; /* Smaller font */
-            padding: 2px 3px; 
-            border-radius: 3px;
+            font-size: 0.65rem; padding: 3px 4px; border-radius: 4px;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
             display: flex; align-items: center; gap: 2px;
             color: #2d3748; border: 1px solid transparent;
-            line-height: 1.2;
+            line-height: 1.2; margin-bottom: 1px;
         }
-        .dish-chip span { font-size: 0.7rem; } /* Icon size */
+        .dish-chip span { font-size: 0.7rem; } 
         
-        /* Color coding */
         .dish-chip.dinner { background: #edf2f7; border-left: 2px solid #2d3748; }
         .dish-chip.lunch { background: #f0fff4; border-left: 2px solid #48bb78; }
         .dish-chip.breakfast { background: #fffaf0; border-left: 2px solid #ecc94b; }
@@ -69,33 +83,41 @@
         /* Fixed Input Bar */
         .input-bar {
             position: fixed; bottom: 0; left: 0; right: 0;
-            background: rgba(255, 255, 255, 0.98);
-            border-top: 1px solid #e2e8f0; padding: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid #e2e8f0; padding: 10px 10px 20px 10px; /* Extra padding for bottom bar nav */
             box-shadow: 0 -4px 20px rgba(0,0,0,0.08); z-index: 100;
         }
-        .bar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .selected-date-label { font-size: 0.75rem; color: #718096; font-weight: bold; }
+        .bar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .selected-date-label { font-size: 0.8rem; color: #2d3748; font-weight: bold; }
         
         /* Meal Type Selector */
-        .meal-selector { display: flex; background: #edf2f7; border-radius: 6px; padding: 2px; }
+        .meal-selector { display: flex; background: #edf2f7; border-radius: 8px; padding: 3px; }
         .radio-label {
-            font-size: 0.7rem; padding: 4px 8px; cursor: pointer; border-radius: 4px; color: #718096; font-weight: bold;
+            font-size: 0.7rem; padding: 6px 10px; cursor: pointer; border-radius: 6px; color: #718096; font-weight: bold; transition: all 0.2s;
         }
         input[type="radio"] { display: none; }
         input[type="radio"]:checked + .radio-label { background: white; color: #2d3748; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
 
-        .input-row-main { display: flex; gap: 6px; max-width: 900px; margin: 0 auto; }
-        .input-row-sub { display: none; margin-top: 8px; max-width: 900px; margin: 0 auto; animation: slideDown 0.2s; }
+        .input-row-main { display: flex; gap: 8px; max-width: 900px; margin: 0 auto; }
+        .input-row-sub { display: none; margin-top: 10px; max-width: 900px; margin: 0 auto; animation: slideDown 0.2s; }
         
-        input[type="text"] { padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 16px; flex: 1; outline: none; }
-        .btn-icon { background: #edf2f7; border: none; border-radius: 6px; width: 38px; height: 38px; font-size: 1.1rem; cursor: pointer; flex-shrink: 0; }
+        input[type="text"] { 
+            padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 16px; flex: 1; outline: none; 
+            -webkit-appearance: none; /* Remove iOS default styles */
+        }
+        input[type="text"]:focus { border-color: #4299e1; }
+        
+        .btn-icon { background: #edf2f7; border: none; border-radius: 8px; width: 42px; height: 42px; font-size: 1.2rem; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center;}
         .btn-icon.active { background: #4299e1; color: white; }
-        .btn-add { background: #2d3748; color: white; border: none; padding: 0 16px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
+        .btn-add { background: #2d3748; color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
+        .btn-add:active { transform: scale(0.98); }
 
         /* Modal */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; }
-        .modal-content { background: white; width: 100%; max-width: 600px; margin: 0 auto; border-radius: 20px 20px 0 0; padding: 20px; max-height: 70vh; overflow-y: auto; }
-        .history-item { padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; cursor: pointer; }
+        .modal-content { background: white; width: 100%; max-width: 600px; margin: 0 auto; border-radius: 20px 20px 0 0; padding: 20px; max-height: 80vh; overflow-y: auto; padding-bottom: 40px;}
+        .history-item { padding: 15px 5px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; cursor: pointer; }
+        .history-item:active { background: #f7fafc; }
 
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -109,7 +131,7 @@
             <span id="currentMonthDisplay">Loading...</span>
             <button class="btn-nav" onclick="changeMonth(1)">›</button>
         </div>
-        <div style="display:flex; gap:5px;">
+        <div style="display:flex; gap:8px;">
             <button onclick="shareBackup()" class="btn-setting">📤 Save</button>
             <button onclick="document.getElementById('fileInput').click()" class="btn-setting">📥 Load</button>
         </div>
@@ -124,7 +146,7 @@
         <div class="weekday-header">Fri</div>
         <div class="weekday-header" style="color:#3182ce">Sat</div>
         <div class="weekday-header" style="color:#e53e3e">Sun</div>
-        </div>
+    </div>
 </div>
 
 <div class="input-bar">
@@ -159,23 +181,21 @@
 
 <div id="historyModal" class="modal-overlay" onclick="closeHistory(event)">
     <div class="modal-content">
-        <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-            <h2>Library 📚</h2>
-            <button onclick="document.getElementById('historyModal').style.display='none'" style="background:none; border:none; font-size:1.5rem;">×</button>
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
+            <h2 style="margin:0; font-size:1.2rem;">Library 📚</h2>
+            <button onclick="document.getElementById('historyModal').style.display='none'" style="background:#edf2f7; border:none; width:30px; height:30px; border-radius:50%; font-size:1.2rem; display:flex; align-items:center; justify-content:center;">×</button>
         </div>
         <div id="historyList"></div>
     </div>
 </div>
 
 <script>
-    // Data Structure: { "2026-01-19": [ {id:123, name:"Curry", link:"...", type:"dinner"} ] }
     let plannerData = JSON.parse(localStorage.getItem('myMenuApp_v2_planner')) || {};
     let history = JSON.parse(localStorage.getItem('myMenuApp_history')) || [];
     
     let viewDate = new Date();
     let selectedDateStr = new Date().toISOString().split('T')[0];
 
-    // Icons for display
     const mealIcons = { breakfast: '☀️', lunch: '🍱', dinner: '🌙' };
     const sortOrder = { breakfast: 1, lunch: 2, dinner: 3 };
 
@@ -197,18 +217,14 @@
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
         const daysInMonth = lastDay.getDate();
-        
-        // Monday Start Logic: (Day + 6) % 7. Sun(0)->6, Mon(1)->0
         const startDayIndex = (firstDay.getDay() + 6) % 7;
 
-        // Previous Month Padding
         for (let i = 0; i < startDayIndex; i++) {
             const cell = document.createElement('div');
             cell.className = 'day-cell other-month';
             grid.appendChild(cell);
         }
 
-        // Days
         const todayStr = new Date().toISOString().split('T')[0];
 
         for (let d = 1; d <= daysInMonth; d++) {
@@ -235,11 +251,8 @@
                     chip.innerHTML = `<span>${mealIcons[type]}</span> ${dish.name}`;
                     chip.onclick = (e) => {
                         e.stopPropagation();
-                        if (confirm(`Delete "${dish.name}"?`)) {
-                            removeDish(dateKey, dish.id);
-                        } else if(dish.link) {
-                            window.open(dish.link, '_blank');
-                        }
+                        if (confirm(`Delete "${dish.name}"?`)) { removeDish(dateKey, dish.id); } 
+                        else if(dish.link) { window.open(dish.link, '_blank'); }
                     };
                     cell.appendChild(chip);
                 });
@@ -257,7 +270,7 @@
     function updateSelectionDisplay() {
         const d = new Date(selectedDateStr);
         const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-        document.getElementById('selectedDateDisplay').textContent = `${label}`;
+        document.getElementById('selectedDateDisplay').textContent = label;
     }
 
     function changeMonth(delta) {
@@ -269,7 +282,6 @@
         const nameInput = document.getElementById('dishName');
         const linkInput = document.getElementById('notionLink');
         const mealType = document.querySelector('input[name="mealType"]:checked').value;
-        
         const name = nameInput.value;
         const link = linkInput.value;
 
@@ -301,7 +313,7 @@
         history.forEach(item => {
             const div = document.createElement('div');
             div.className = 'history-item';
-            div.innerHTML = `<span style="font-weight:bold">${item.name} ${item.link?'🔗':''}</span><span style="color:#4299e1">+Add as ${currentIcon}</span>`;
+            div.innerHTML = `<span style="font-weight:bold">${item.name} ${item.link?'🔗':''}</span><span style="color:#4299e1; font-size:0.8rem; display:flex; align-items:center;">+ ${currentIcon}</span>`;
             div.onclick = () => {
                 document.getElementById('dishName').value = item.name;
                 document.getElementById('notionLink').value = item.link || '';
@@ -322,10 +334,8 @@
     }
     function save() { localStorage.setItem('myMenuApp_v2_planner', JSON.stringify(plannerData)); }
 
-    // Backup
     async function shareBackup() {
         const data = { planner: plannerData, history: history };
-        // Use text/plain for drive visibility
         const file = new File([JSON.stringify(data, null, 2)], "menu-backup-monthly.json", {type: "text/plain"});
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
             try { await navigator.share({ files: [file], title: 'Menu Backup', text: 'Monthly Menu Data' }); } 
