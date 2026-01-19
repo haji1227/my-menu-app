@@ -5,12 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monthly Menu</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 10px; padding-bottom: 140px; background: #f8f9fa; color: #2d3748; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 10px; padding-bottom: 150px; background: #f8f9fa; color: #2d3748; }
         .container { max-width: 1000px; margin: 0 auto; }
         
-        /* Header & Controls */
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        h1 { font-size: 1.2rem; margin: 0; font-weight: 800; }
+        /* Header */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .month-nav { display: flex; align-items: center; gap: 15px; font-size: 1.1rem; font-weight: bold; }
         .btn-nav { background: none; border: none; font-size: 1.2rem; padding: 5px 10px; cursor: pointer; color: #4a5568; }
         .btn-setting { font-size: 0.8rem; background: #edf2f7; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
@@ -20,7 +19,7 @@
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             gap: 1px;
-            background: #cbd5e0; /* Border color */
+            background: #cbd5e0;
             border: 1px solid #cbd5e0;
             border-radius: 8px;
             overflow: hidden;
@@ -43,27 +42,43 @@
         
         /* Dish Chips */
         .dish-chip {
-            background: #edf2f7; font-size: 0.7rem; padding: 3px 6px; border-radius: 4px;
+            font-size: 0.7rem; padding: 2px 4px; border-radius: 4px;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            border-left: 3px solid #4299e1; display: block; text-decoration: none; color: #2d3748;
+            display: flex; align-items: center; gap: 4px;
+            color: #2d3748; border: 1px solid transparent;
         }
-        .dish-chip.has-link { border-left-color: #ed8936; }
+        /* Color coding by meal type */
+        .dish-chip.dinner { background: #edf2f7; border-left: 3px solid #2d3748; } /* Default/Dinner */
+        .dish-chip.lunch { background: #f0fff4; border-left: 3px solid #48bb78; }
+        .dish-chip.breakfast { background: #fffaf0; border-left: 3px solid #ecc94b; }
+        
+        .dish-chip.has-link { border-right: 3px solid #ed8936; } /* Right border for link indicator */
 
         /* Fixed Input Bar */
         .input-bar {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: rgba(255, 255, 255, 0.98);
-            border-top: 1px solid #e2e8f0; padding: 15px;
+            border-top: 1px solid #e2e8f0; padding: 12px;
             box-shadow: 0 -4px 20px rgba(0,0,0,0.08); z-index: 100;
         }
-        .selected-date-label { font-size: 0.75rem; color: #718096; margin-bottom: 5px; font-weight: bold; display: block;}
+        .bar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .selected-date-label { font-size: 0.75rem; color: #718096; font-weight: bold; }
+        
+        /* Meal Type Selector (Segmented Control style) */
+        .meal-selector { display: flex; background: #edf2f7; border-radius: 6px; padding: 2px; }
+        .radio-label {
+            font-size: 0.75rem; padding: 4px 8px; cursor: pointer; border-radius: 4px; color: #718096; font-weight: bold;
+        }
+        input[type="radio"] { display: none; }
+        input[type="radio"]:checked + .radio-label { background: white; color: #2d3748; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+
         .input-row-main { display: flex; gap: 8px; max-width: 900px; margin: 0 auto; }
         .input-row-sub { display: none; margin-top: 10px; max-width: 900px; margin: 0 auto; animation: slideDown 0.2s; }
         
-        input { padding: 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 16px; flex: 1; outline: none; }
-        .btn-icon { background: #edf2f7; border: none; border-radius: 8px; width: 44px; height: 44px; font-size: 1.2rem; cursor: pointer; flex-shrink: 0; }
+        input[type="text"] { padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 16px; flex: 1; outline: none; }
+        .btn-icon { background: #edf2f7; border: none; border-radius: 8px; width: 40px; height: 40px; font-size: 1.1rem; cursor: pointer; flex-shrink: 0; }
         .btn-icon.active { background: #4299e1; color: white; }
-        .btn-add { background: #2d3748; color: white; border: none; padding: 0 24px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-add { background: #2d3748; color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
         /* Modal */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; }
@@ -90,21 +105,38 @@
     </div>
 
     <div class="calendar-grid" id="calendarGrid">
-        <div class="weekday-header" style="color:#e53e3e">Sun</div>
         <div class="weekday-header">Mon</div>
         <div class="weekday-header">Tue</div>
         <div class="weekday-header">Wed</div>
         <div class="weekday-header">Thu</div>
         <div class="weekday-header">Fri</div>
         <div class="weekday-header" style="color:#3182ce">Sat</div>
+        <div class="weekday-header" style="color:#e53e3e">Sun</div>
         </div>
 </div>
 
 <div class="input-bar">
-    <span class="selected-date-label" id="selectedDateDisplay">Select a date</span>
+    <div class="bar-header">
+        <span class="selected-date-label" id="selectedDateDisplay">Select a date</span>
+        <div class="meal-selector">
+            <label>
+                <input type="radio" name="mealType" value="breakfast">
+                <span class="radio-label">Breakfast</span>
+            </label>
+            <label>
+                <input type="radio" name="mealType" value="lunch">
+                <span class="radio-label">Lunch</span>
+            </label>
+            <label>
+                <input type="radio" name="mealType" value="dinner" checked>
+                <span class="radio-label">Dinner</span>
+            </label>
+        </div>
+    </div>
+
     <div class="input-row-main">
         <button class="btn-icon" onclick="openHistory()">📖</button>
-        <input type="text" id="dishName" placeholder="Dish Name...">
+        <input type="text" id="dishName" placeholder="Menu...">
         <button class="btn-icon" onclick="toggleLinkInput()" id="linkToggleBtn">📎</button>
         <button onclick="addDish()" class="btn-add">Add</button>
     </div>
@@ -124,12 +156,16 @@
 </div>
 
 <script>
-    // Data Structure: { "2026-01-19": [ {id:123, name:"Curry", link:"..."} ] }
+    // Data Structure: { "2026-01-19": [ {id:123, name:"Curry", link:"...", type:"dinner"} ] }
     let plannerData = JSON.parse(localStorage.getItem('myMenuApp_v2_planner')) || {};
     let history = JSON.parse(localStorage.getItem('myMenuApp_history')) || [];
     
-    let viewDate = new Date(); // Current month viewing
-    let selectedDateStr = new Date().toISOString().split('T')[0]; // Initially select today
+    let viewDate = new Date();
+    let selectedDateStr = new Date().toISOString().split('T')[0];
+
+    // Icons for display
+    const mealIcons = { breakfast: '☀️', lunch: '🍱', dinner: '🌙' };
+    const sortOrder = { breakfast: 1, lunch: 2, dinner: 3 };
 
     function init() {
         renderCalendar();
@@ -138,7 +174,7 @@
 
     function renderCalendar() {
         const grid = document.getElementById('calendarGrid');
-        // Clear old cells (keep headers)
+        // Keep first 7 elements (headers)
         while(grid.children.length > 7) grid.removeChild(grid.lastChild);
 
         const year = viewDate.getFullYear();
@@ -150,10 +186,12 @@
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
         const daysInMonth = lastDay.getDate();
-        const startDayOfWeek = firstDay.getDay(); // 0=Sun
+        
+        // Monday Start Logic: (Day + 6) % 7. Sun(0)->6, Mon(1)->0
+        const startDayIndex = (firstDay.getDay() + 6) % 7;
 
         // Previous Month Padding
-        for (let i = 0; i < startDayOfWeek; i++) {
+        for (let i = 0; i < startDayIndex; i++) {
             const cell = document.createElement('div');
             cell.className = 'day-cell other-month';
             grid.appendChild(cell);
@@ -164,7 +202,6 @@
 
         for (let d = 1; d <= daysInMonth; d++) {
             const dateObj = new Date(year, month, d);
-            // Fix timezone offset issue for string generation
             const y = dateObj.getFullYear();
             const m = String(dateObj.getMonth() + 1).padStart(2, '0');
             const day = String(dateObj.getDate()).padStart(2, '0');
@@ -176,18 +213,21 @@
             if (dateKey === selectedDateStr) cell.classList.add('selected');
 
             cell.onclick = () => selectDate(dateKey);
-
             cell.innerHTML = `<div class="date-number">${d}</div>`;
 
-            // Render Dishes
             if (plannerData[dateKey]) {
+                // Sort by meal type
+                plannerData[dateKey].sort((a,b) => (sortOrder[a.type||'dinner'] - sortOrder[b.type||'dinner']));
+
                 plannerData[dateKey].forEach(dish => {
+                    const type = dish.type || 'dinner';
                     const chip = document.createElement('div');
-                    chip.className = `dish-chip ${dish.link ? 'has-link' : ''}`;
-                    chip.textContent = dish.name;
+                    chip.className = `dish-chip ${type} ${dish.link ? 'has-link' : ''}`;
+                    // Show icon + name
+                    chip.innerHTML = `<span>${mealIcons[type]}</span> ${dish.name}`;
                     chip.onclick = (e) => {
-                        e.stopPropagation(); // Don't trigger cell click
-                        if (confirm(`Delete "${dish.name}" from ${dateKey}?`)) {
+                        e.stopPropagation();
+                        if (confirm(`Delete "${dish.name}"?`)) {
                             removeDish(dateKey, dish.id);
                         } else if(dish.link) {
                             window.open(dish.link, '_blank');
@@ -202,14 +242,14 @@
 
     function selectDate(dateKey) {
         selectedDateStr = dateKey;
-        renderCalendar(); // Re-render to show selection highlight
+        renderCalendar();
         updateSelectionDisplay();
     }
 
     function updateSelectionDisplay() {
         const d = new Date(selectedDateStr);
         const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-        document.getElementById('selectedDateDisplay').textContent = `Adding to: ${label} ✏️`;
+        document.getElementById('selectedDateDisplay').textContent = `${label}`;
     }
 
     function changeMonth(delta) {
@@ -220,6 +260,9 @@
     function addDish() {
         const nameInput = document.getElementById('dishName');
         const linkInput = document.getElementById('notionLink');
+        // Get selected meal type
+        const mealType = document.querySelector('input[name="mealType"]:checked').value;
+        
         const name = nameInput.value;
         const link = linkInput.value;
 
@@ -229,10 +272,10 @@
             plannerData[selectedDateStr].push({
                 id: Date.now(),
                 name: name,
-                link: link
+                link: link,
+                type: mealType
             });
 
-            // Add to History
             if (!history.some(h => h.name === name)) {
                 history.push({ name: name, link: link });
                 localStorage.setItem('myMenuApp_history', JSON.stringify(history));
@@ -257,11 +300,14 @@
     function openHistory() {
         const modal = document.getElementById('historyModal');
         const list = document.getElementById('historyList');
+        const currentType = document.querySelector('input[name="mealType"]:checked').value;
+        const currentIcon = mealIcons[currentType];
+
         list.innerHTML = '';
         history.forEach(item => {
             const div = document.createElement('div');
             div.className = 'history-item';
-            div.innerHTML = `<span style="font-weight:bold">${item.name} ${item.link?'🔗':''}</span><span style="color:#4299e1">+ Add</span>`;
+            div.innerHTML = `<span style="font-weight:bold">${item.name} ${item.link?'🔗':''}</span><span style="color:#4299e1">+Add as ${currentIcon}</span>`;
             div.onclick = () => {
                 document.getElementById('dishName').value = item.name;
                 document.getElementById('notionLink').value = item.link || '';
@@ -303,7 +349,6 @@
         reader.onload = function(e) {
             try {
                 const data = JSON.parse(e.target.result);
-                // Simple validation check
                 if(data.planner || data.history) {
                     if(data.planner) plannerData = data.planner;
                     if(data.history) {
