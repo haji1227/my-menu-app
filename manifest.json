@@ -1,6 +1,6 @@
 {
-  "name": "My Menu",
-  "short_name": "献立",
+  "name": "Meal Plan",
+  "short_name": "Meal Plan",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f8f9fa",
