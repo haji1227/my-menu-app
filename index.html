@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f8f9fa">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <title>Monthly Menu</title>
+    <title>Meal Plan</title>
     
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍳</text></svg>">
@@ -26,7 +26,6 @@
             user-select: none; /* App-like feel (no text selection) */
         }
         
-        /* Allow text selection in inputs */
         input, textarea { user-select: text; }
 
         .container { max-width: 1000px; margin: 0 auto; }
@@ -58,8 +57,9 @@
             background: white; min-height: 75px; padding: 2px; position: relative; cursor: pointer;
             display: flex; flex-direction: column; gap: 2px;
         }
-        .day-cell:active { background: #f7fafc; } /* Touch feedback */
-        .day-cell.other-month { background: #f9fafb; color: #cbd5e0; }
+        .day-cell:active { background: #f7fafc; } 
+        /* Other month styling: slightly gray background, lighter text */
+        .day-cell.other-month { background: #fbfbfb; color: #a0aec0; }
         .day-cell.today { background: #fffaf0; }
         .day-cell.selected { background: #ebf8ff; box-shadow: inset 0 0 0 2px #4299e1; }
         
@@ -75,6 +75,9 @@
         }
         .dish-chip span { font-size: 0.7rem; } 
         
+        /* Faded chips for other months */
+        .day-cell.other-month .dish-chip { opacity: 0.7; }
+
         .dish-chip.dinner { background: #edf2f7; border-left: 2px solid #2d3748; }
         .dish-chip.lunch { background: #f0fff4; border-left: 2px solid #48bb78; }
         .dish-chip.breakfast { background: #fffaf0; border-left: 2px solid #ecc94b; }
@@ -85,7 +88,7 @@
             position: fixed; bottom: 0; left: 0; right: 0;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
-            border-top: 1px solid #e2e8f0; padding: 10px 10px 20px 10px; /* Extra padding for bottom bar nav */
+            border-top: 1px solid #e2e8f0; padding: 10px 10px 20px 10px; 
             box-shadow: 0 -4px 20px rgba(0,0,0,0.08); z-index: 100;
         }
         .bar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
@@ -104,7 +107,7 @@
         
         input[type="text"] { 
             padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 16px; flex: 1; outline: none; 
-            -webkit-appearance: none; /* Remove iOS default styles */
+            -webkit-appearance: none; 
         }
         input[type="text"]:focus { border-color: #4299e1; }
         
@@ -204,6 +207,47 @@
         updateSelectionDisplay();
     }
 
+    // Helper to format YYYY-MM-DD
+    function formatDateKey(dateObj) {
+        const y = dateObj.getFullYear();
+        const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const d = String(dateObj.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+
+    function renderCell(grid, dateObj, isCurrentMonth) {
+        const dateKey = formatDateKey(dateObj);
+        const cell = document.createElement('div');
+        cell.className = 'day-cell';
+        if (!isCurrentMonth) cell.classList.add('other-month');
+        
+        // Highlight logic
+        const todayStr = formatDateKey(new Date());
+        if (dateKey === todayStr) cell.classList.add('today');
+        if (dateKey === selectedDateStr) cell.classList.add('selected');
+
+        cell.onclick = () => selectDate(dateKey);
+        cell.innerHTML = `<div class="date-number">${dateObj.getDate()}</div>`;
+
+        // Render Dishes
+        if (plannerData[dateKey]) {
+            plannerData[dateKey].sort((a,b) => (sortOrder[a.type||'dinner'] - sortOrder[b.type||'dinner']));
+            plannerData[dateKey].forEach(dish => {
+                const type = dish.type || 'dinner';
+                const chip = document.createElement('div');
+                chip.className = `dish-chip ${type} ${dish.link ? 'has-link' : ''}`;
+                chip.innerHTML = `<span>${mealIcons[type]}</span> ${dish.name}`;
+                chip.onclick = (e) => {
+                    e.stopPropagation();
+                    if (confirm(`Delete "${dish.name}"?`)) { removeDish(dateKey, dish.id); } 
+                    else if(dish.link) { window.open(dish.link, '_blank'); }
+                };
+                cell.appendChild(chip);
+            });
+        }
+        grid.appendChild(cell);
+    }
+
     function renderCalendar() {
         const grid = document.getElementById('calendarGrid');
         while(grid.children.length > 7) grid.removeChild(grid.lastChild);
@@ -217,47 +261,31 @@
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
         const daysInMonth = lastDay.getDate();
+        
+        // Monday Start Logic: (Day + 6) % 7. Sun(0)->6, Mon(1)->0
         const startDayIndex = (firstDay.getDay() + 6) % 7;
 
-        for (let i = 0; i < startDayIndex; i++) {
-            const cell = document.createElement('div');
-            cell.className = 'day-cell other-month';
-            grid.appendChild(cell);
+        // 1. Previous Month Padding (Actual dates)
+        const prevMonthLastDay = new Date(year, month, 0).getDate();
+        for (let i = startDayIndex - 1; i >= 0; i--) {
+            const d = prevMonthLastDay - i;
+            const dateObj = new Date(year, month - 1, d); // Handles year rollover
+            renderCell(grid, dateObj, false);
         }
 
-        const todayStr = new Date().toISOString().split('T')[0];
-
+        // 2. Current Month
         for (let d = 1; d <= daysInMonth; d++) {
             const dateObj = new Date(year, month, d);
-            const y = dateObj.getFullYear();
-            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
-            const day = String(dateObj.getDate()).padStart(2, '0');
-            const dateKey = `${y}-${m}-${day}`;
+            renderCell(grid, dateObj, true);
+        }
 
-            const cell = document.createElement('div');
-            cell.className = 'day-cell';
-            if (dateKey === todayStr) cell.classList.add('today');
-            if (dateKey === selectedDateStr) cell.classList.add('selected');
-
-            cell.onclick = () => selectDate(dateKey);
-            cell.innerHTML = `<div class="date-number">${d}</div>`;
-
-            if (plannerData[dateKey]) {
-                plannerData[dateKey].sort((a,b) => (sortOrder[a.type||'dinner'] - sortOrder[b.type||'dinner']));
-                plannerData[dateKey].forEach(dish => {
-                    const type = dish.type || 'dinner';
-                    const chip = document.createElement('div');
-                    chip.className = `dish-chip ${type} ${dish.link ? 'has-link' : ''}`;
-                    chip.innerHTML = `<span>${mealIcons[type]}</span> ${dish.name}`;
-                    chip.onclick = (e) => {
-                        e.stopPropagation();
-                        if (confirm(`Delete "${dish.name}"?`)) { removeDish(dateKey, dish.id); } 
-                        else if(dish.link) { window.open(dish.link, '_blank'); }
-                    };
-                    cell.appendChild(chip);
-                });
-            }
-            grid.appendChild(cell);
+        // 3. Next Month Padding (Fill remaining cells in last row)
+        const totalCellsSoFar = startDayIndex + daysInMonth;
+        const remainingCells = (7 - (totalCellsSoFar % 7)) % 7;
+        
+        for (let d = 1; d <= remainingCells; d++) {
+            const dateObj = new Date(year, month + 1, d); // Handles year rollover
+            renderCell(grid, dateObj, false);
         }
     }
 
@@ -338,7 +366,7 @@
         const data = { planner: plannerData, history: history };
         const file = new File([JSON.stringify(data, null, 2)], "menu-backup-monthly.json", {type: "text/plain"});
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            try { await navigator.share({ files: [file], title: 'Menu Backup', text: 'Monthly Menu Data' }); } 
+            try { await navigator.share({ files: [file], title: 'Meal Plan Backup', text: 'Monthly Menu Data' }); } 
             catch (err) { console.log(err); }
         } else { downloadFallback(file); }
     }
