@@ -5,17 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weekly Menu</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; padding-bottom: 120px; background: #f8f9fa; color: #2d3748; }
-        .container { max-width: 800px; margin: 0 auto; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; padding-bottom: 140px; background: #f8f9fa; color: #2d3748; }
+        .container { max-width: 900px; margin: 0 auto; }
         
-        /* Typography */
+        /* Header */
         h1 { font-size: 1.5rem; text-align: center; margin-bottom: 20px; font-weight: 800; letter-spacing: -0.5px; }
         
         /* Calendar Grid */
         .calendar-grid {
             display: grid;
             gap: 15px;
-            /* Responsive: 1 col on small, 2 cols on wide/fold */
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
         }
 
@@ -51,18 +50,39 @@
             box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
             z-index: 100;
         }
-        .input-row-main { display: flex; gap: 8px; max-width: 800px; margin: 0 auto; }
-        .input-row-sub { display: none; margin-top: 10px; max-width: 800px; margin: 0 auto; animation: slideDown 0.2s ease-out; }
+        .input-row-main { display: flex; gap: 8px; max-width: 900px; margin: 0 auto; }
+        .input-row-sub { display: none; margin-top: 10px; max-width: 900px; margin: 0 auto; animation: slideDown 0.2s ease-out; }
         
         select, input { padding: 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 16px; outline: none; background: white;}
         select { flex: 0 0 80px; font-weight: bold; }
         input { flex: 1; }
         
-        .btn-icon { background: #edf2f7; border: none; border-radius: 8px; width: 44px; font-size: 1.2rem; cursor: pointer; color: #4a5568;}
+        .btn-icon { background: #edf2f7; border: none; border-radius: 8px; width: 44px; height: 44px; font-size: 1.2rem; cursor: pointer; color: #4a5568; flex-shrink: 0; display:flex; align-items:center; justify-content:center;}
         .btn-icon.active { background: #4299e1; color: white; }
         .btn-add { background: #2d3748; color: white; border: none; padding: 0 24px; border-radius: 8px; font-weight: bold; cursor: pointer;}
         
+        /* History Modal */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 200;
+            align-items: flex-end; /* Bottom sheet style */
+        }
+        .modal-content {
+            background: white; width: 100%; max-width: 600px; margin: 0 auto;
+            border-radius: 20px 20px 0 0; padding: 20px;
+            max-height: 70vh; overflow-y: auto;
+            animation: slideUp 0.3s ease-out;
+        }
+        .history-item {
+            padding: 12px; border-bottom: 1px solid #eee; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .history-item:hover { background: #f7fafc; }
+        .history-name { font-weight: bold; }
+        .history-link { font-size: 0.8rem; color: #aaa; margin-left: 10px; }
+
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -70,7 +90,7 @@
 <div class="container">
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <h1>Weekly Menu 🗓️</h1>
-        <button onclick="clearWeek()" style="color:#e53e3e; background:none; border:none; font-size:0.8rem;">Reset</button>
+        <button onclick="clearWeek()" style="color:#e53e3e; background:none; border:none; font-size:0.8rem;">Reset Week</button>
     </div>
 
     <div id="calendarView" class="calendar-grid"></div>
@@ -87,6 +107,7 @@
             <option value="Sat">Sat</option>
             <option value="Sun">Sun</option>
         </select>
+        <button class="btn-icon" onclick="openHistory()" style="margin-right:5px;">📖</button>
         <input type="text" id="dishName" placeholder="Dish Name...">
         <button class="btn-icon" onclick="toggleLinkInput()" id="linkToggleBtn">📎</button>
         <button onclick="addDish()" class="btn-add">Add</button>
@@ -96,8 +117,20 @@
     </div>
 </div>
 
+<div id="historyModal" class="modal-overlay" onclick="closeHistory(event)">
+    <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+            <h2>My Library 📚</h2>
+            <button onclick="document.getElementById('historyModal').style.display='none'" style="border:none; background:none; font-size:1.5rem;">×</button>
+        </div>
+        <p style="font-size:0.8rem; color:#718096; margin-bottom:10px;">Tap to add to <span id="targetDayLabel" style="font-weight:bold; color:#2d3748;">Current Day</span></p>
+        <div id="historyList"></div>
+    </div>
+</div>
+
 <script>
     let planner = JSON.parse(localStorage.getItem('myMenuApp_planner')) || [];
+    let history = JSON.parse(localStorage.getItem('myMenuApp_history')) || [];
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     function render() {
@@ -121,7 +154,6 @@
                 `;
             });
 
-            // Empty state
             if(daysDishes.length === 0) dishesHtml = '<div style="color:#cbd5e0; font-size:0.8rem; text-align:center; padding:10px;">-</div>';
 
             view.innerHTML += `
@@ -149,21 +181,68 @@
         const day = document.getElementById('daySelect').value;
         const nameInput = document.getElementById('dishName');
         const linkInput = document.getElementById('notionLink');
+        const name = nameInput.value;
+        const link = linkInput.value;
         
-        if(nameInput.value) {
-            planner.push({
-                id: Date.now(),
-                day: day,
-                name: nameInput.value,
-                link: linkInput.value
-            });
+        if(name) {
+            // Add to Planner
+            planner.push({ id: Date.now(), day: day, name: name, link: link });
+            
+            // Add to History (if unique)
+            const exists = history.some(h => h.name === name);
+            if(!exists) {
+                history.push({ name: name, link: link });
+                localStorage.setItem('myMenuApp_history', JSON.stringify(history));
+            }
+
             save();
             render();
             nameInput.value = '';
             linkInput.value = '';
-            // Don't close link input automatically, in case user adds multiple links
         }
     }
+
+    // --- History Functions ---
+
+    function openHistory() {
+        const modal = document.getElementById('historyModal');
+        const list = document.getElementById('historyList');
+        const targetDay = document.getElementById('daySelect').value;
+        
+        document.getElementById('targetDayLabel').innerText = targetDay;
+        list.innerHTML = '';
+
+        if(history.length === 0) {
+            list.innerHTML = '<div style="padding:20px; text-align:center; color:#aaa;">No history yet.<br>Add dishes to build your library!</div>';
+        } else {
+            history.forEach(item => {
+                let linkBadge = item.link ? '🔗' : '';
+                list.innerHTML += `
+                    <div class="history-item" onclick="addFromHistory('${item.name}', '${item.link || ''}')">
+                        <span class="history-name">${item.name} ${linkBadge}</span>
+                        <span style="color:#4299e1; font-weight:bold;">+ Add</span>
+                    </div>
+                `;
+            });
+        }
+        modal.style.display = 'flex';
+    }
+
+    function addFromHistory(name, link) {
+        const day = document.getElementById('daySelect').value;
+        planner.push({ id: Date.now(), day: day, name: name, link: link });
+        save();
+        render();
+        document.getElementById('historyModal').style.display = 'none';
+    }
+
+    function closeHistory(e) {
+        if(e.target.id === 'historyModal') {
+            document.getElementById('historyModal').style.display = 'none';
+        }
+    }
+
+    // --- Utils ---
 
     function removeDish(id) {
         planner = planner.filter(d => d.id !== id);
@@ -172,7 +251,7 @@
     }
 
     function clearWeek() {
-        if(confirm('Clear all?')) {
+        if(confirm('Start a new week?')) {
             planner = [];
             save();
             render();
