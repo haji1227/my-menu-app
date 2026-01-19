@@ -13,17 +13,17 @@
     <link rel="apple-touch-icon" href="icon.png">
 
     <style>
-        /* Layout Adjustments for App-like feel */
+        /* Layout Adjustments */
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
             padding: 5px; 
-            padding-bottom: 160px; /* Safe area for input bar */
-            padding-top: env(safe-area-inset-top); /* Notch support */
+            padding-bottom: 180px; /* Increased safe area for taller wrapped content */
+            padding-top: env(safe-area-inset-top);
             background: #f8f9fa; 
             color: #2d3748; 
             overflow-x: hidden;
-            -webkit-tap-highlight-color: transparent; /* Remove tap highlight */
-            user-select: none; /* App-like feel (no text selection) */
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
         
         input, textarea { user-select: text; }
@@ -32,9 +32,9 @@
         
         /* Header */
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 5px;}
-        .month-nav { display: flex; align-items: center; gap: 10px; font-size: 1.0rem; font-weight: bold; }
-        .btn-nav { background: none; border: none; font-size: 1.4rem; padding: 5px 10px; cursor: pointer; color: #4a5568; }
-        .btn-setting { font-size: 0.75rem; background: #edf2f7; border: none; padding: 8px 12px; border-radius: 20px; cursor: pointer; white-space: nowrap; font-weight:600;}
+        .month-nav { display: flex; align-items: center; gap: 8px; font-size: 1.0rem; font-weight: bold; }
+        .btn-nav { background: none; border: none; font-size: 1.4rem; padding: 5px 8px; cursor: pointer; color: #4a5568; }
+        .btn-setting { font-size: 0.75rem; background: #edf2f7; border: none; padding: 8px 10px; border-radius: 20px; cursor: pointer; white-space: nowrap; font-weight:600;}
 
         /* Calendar Grid */
         .calendar-grid {
@@ -49,34 +49,55 @@
         }
         
         .weekday-header {
-            background: #f7fafc; padding: 8px 2px; text-align: center; font-size: 0.7rem; font-weight: bold; color: #718096;
+            background: #f7fafc; padding: 8px 1px; text-align: center; font-size: 0.65rem; font-weight: bold; color: #718096;
         }
         
         /* Date Cell */
         .day-cell {
-            background: white; min-height: 75px; padding: 2px; position: relative; cursor: pointer;
-            display: flex; flex-direction: column; gap: 2px;
+            background: white; 
+            min-height: 75px; 
+            height: auto; /* Allow grow */
+            padding: 2px; 
+            position: relative; 
+            cursor: pointer;
+            display: flex; 
+            flex-direction: column; 
+            gap: 2px;
+            overflow: visible; /* Show overflow */
         }
         .day-cell:active { background: #f7fafc; } 
-        /* Other month styling: slightly gray background, lighter text */
         .day-cell.other-month { background: #fbfbfb; color: #a0aec0; }
         .day-cell.today { background: #fffaf0; }
         .day-cell.selected { background: #ebf8ff; box-shadow: inset 0 0 0 2px #4299e1; }
         
-        .date-number { font-size: 0.7rem; font-weight: bold; margin-bottom: 1px; padding-left: 2px; }
+        .date-number { font-size: 0.7rem; font-weight: bold; margin-bottom: 2px; padding-left: 2px; }
         
-        /* Dish Chips */
+        /* Dish Chips - Wrapping Enabled */
         .dish-chip {
-            font-size: 0.65rem; padding: 3px 4px; border-radius: 4px;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            display: flex; align-items: center; gap: 2px;
+            font-size: 0.65rem; 
+            padding: 3px 4px; 
+            border-radius: 4px;
+            
+            /* Wrapping Logic */
+            white-space: normal;       /* Allow wrapping */
+            word-wrap: break-word;     /* Break long words */
+            word-break: break-word;    /* Break long words */
+            line-height: 1.2;          /* Tighter line height for multiline */
+            height: auto;              /* Allow height to grow */
+            
+            display: flex; 
+            align-items: flex-start; /* Align icon to top */
+            gap: 3px;
             color: #2d3748; border: 1px solid transparent;
-            line-height: 1.2; margin-bottom: 1px;
+            margin-bottom: 1px;
         }
-        .dish-chip span { font-size: 0.7rem; } 
+        .dish-chip span { 
+            font-size: 0.7rem; 
+            margin-top: 1px; /* Adjust icon position slightly */
+            flex-shrink: 0; /* Don't shrink icon */
+        } 
         
-        /* Faded chips for other months */
-        .day-cell.other-month .dish-chip { opacity: 0.7; }
+        .day-cell.other-month .dish-chip { opacity: 0.6; }
 
         .dish-chip.dinner { background: #edf2f7; border-left: 2px solid #2d3748; }
         .dish-chip.lunch { background: #f0fff4; border-left: 2px solid #48bb78; }
@@ -86,34 +107,36 @@
         /* Fixed Input Bar */
         .input-bar {
             position: fixed; bottom: 0; left: 0; right: 0;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-top: 1px solid #e2e8f0; padding: 10px 10px 20px 10px; 
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(5px);
+            border-top: 1px solid #e2e8f0; padding: 8px 8px 20px 8px; 
             box-shadow: 0 -4px 20px rgba(0,0,0,0.08); z-index: 100;
         }
-        .bar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .selected-date-label { font-size: 0.8rem; color: #2d3748; font-weight: bold; }
+        .bar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .selected-date-label { font-size: 0.75rem; color: #2d3748; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 35%; }
         
         /* Meal Type Selector */
-        .meal-selector { display: flex; background: #edf2f7; border-radius: 8px; padding: 3px; }
+        .meal-selector { display: flex; background: #edf2f7; border-radius: 8px; padding: 2px; flex-shrink: 0;}
         .radio-label {
-            font-size: 0.7rem; padding: 6px 10px; cursor: pointer; border-radius: 6px; color: #718096; font-weight: bold; transition: all 0.2s;
+            font-size: 0.65rem; padding: 5px 8px; cursor: pointer; border-radius: 6px; color: #718096; font-weight: bold; transition: all 0.2s;
         }
         input[type="radio"] { display: none; }
         input[type="radio"]:checked + .radio-label { background: white; color: #2d3748; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
 
-        .input-row-main { display: flex; gap: 8px; max-width: 900px; margin: 0 auto; }
-        .input-row-sub { display: none; margin-top: 10px; max-width: 900px; margin: 0 auto; animation: slideDown 0.2s; }
+        .input-row-main { display: flex; gap: 5px; max-width: 900px; margin: 0 auto; align-items: center; }
+        .input-row-sub { display: none; margin-top: 8px; max-width: 900px; margin: 0 auto; animation: slideDown 0.2s; }
         
         input[type="text"] { 
-            padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 16px; flex: 1; outline: none; 
-            -webkit-appearance: none; 
+            padding: 8px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 16px; 
+            flex: 1; /* Grow to fill space */
+            min-width: 0; /* Allow shrinking below content size */
+            outline: none; -webkit-appearance: none; 
         }
         input[type="text"]:focus { border-color: #4299e1; }
         
-        .btn-icon { background: #edf2f7; border: none; border-radius: 8px; width: 42px; height: 42px; font-size: 1.2rem; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center;}
+        .btn-icon { background: #edf2f7; border: none; border-radius: 8px; width: 38px; height: 38px; font-size: 1.1rem; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center;}
         .btn-icon.active { background: #4299e1; color: white; }
-        .btn-add { background: #2d3748; color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
+        .btn-add { background: #2d3748; color: white; border: none; padding: 0 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.85rem; height: 38px; flex-shrink: 0;}
         .btn-add:active { transform: scale(0.98); }
 
         /* Modal */
@@ -134,7 +157,7 @@
             <span id="currentMonthDisplay">Loading...</span>
             <button class="btn-nav" onclick="changeMonth(1)">›</button>
         </div>
-        <div style="display:flex; gap:8px;">
+        <div style="display:flex; gap:5px;">
             <button onclick="shareBackup()" class="btn-setting">📤 Save</button>
             <button onclick="document.getElementById('fileInput').click()" class="btn-setting">📥 Load</button>
         </div>
@@ -221,7 +244,6 @@
         cell.className = 'day-cell';
         if (!isCurrentMonth) cell.classList.add('other-month');
         
-        // Highlight logic
         const todayStr = formatDateKey(new Date());
         if (dateKey === todayStr) cell.classList.add('today');
         if (dateKey === selectedDateStr) cell.classList.add('selected');
@@ -229,7 +251,6 @@
         cell.onclick = () => selectDate(dateKey);
         cell.innerHTML = `<div class="date-number">${dateObj.getDate()}</div>`;
 
-        // Render Dishes
         if (plannerData[dateKey]) {
             plannerData[dateKey].sort((a,b) => (sortOrder[a.type||'dinner'] - sortOrder[b.type||'dinner']));
             plannerData[dateKey].forEach(dish => {
@@ -261,31 +282,25 @@
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
         const daysInMonth = lastDay.getDate();
-        
-        // Monday Start Logic: (Day + 6) % 7. Sun(0)->6, Mon(1)->0
         const startDayIndex = (firstDay.getDay() + 6) % 7;
 
-        // 1. Previous Month Padding (Actual dates)
+        // 1. Previous Month
         const prevMonthLastDay = new Date(year, month, 0).getDate();
         for (let i = startDayIndex - 1; i >= 0; i--) {
             const d = prevMonthLastDay - i;
-            const dateObj = new Date(year, month - 1, d); // Handles year rollover
-            renderCell(grid, dateObj, false);
+            renderCell(grid, new Date(year, month - 1, d), false);
         }
 
         // 2. Current Month
         for (let d = 1; d <= daysInMonth; d++) {
-            const dateObj = new Date(year, month, d);
-            renderCell(grid, dateObj, true);
+            renderCell(grid, new Date(year, month, d), true);
         }
 
-        // 3. Next Month Padding (Fill remaining cells in last row)
+        // 3. Next Month
         const totalCellsSoFar = startDayIndex + daysInMonth;
         const remainingCells = (7 - (totalCellsSoFar % 7)) % 7;
-        
         for (let d = 1; d <= remainingCells; d++) {
-            const dateObj = new Date(year, month + 1, d); // Handles year rollover
-            renderCell(grid, dateObj, false);
+            renderCell(grid, new Date(year, month + 1, d), false);
         }
     }
 
