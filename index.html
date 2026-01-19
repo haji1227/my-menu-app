@@ -5,115 +5,98 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weekly Menu</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; background: #f8f9fa; color: #2d3748; }
-        .container { max-width: 600px; margin: 0 auto; padding-bottom: 80px;} /* Padding for fixed footer */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; padding-bottom: 120px; background: #f8f9fa; color: #2d3748; }
+        .container { max-width: 800px; margin: 0 auto; }
         
         /* Typography */
         h1 { font-size: 1.5rem; text-align: center; margin-bottom: 20px; font-weight: 800; letter-spacing: -0.5px; }
-        h2 { font-size: 1.1rem; margin: 0; font-weight: 700; color: #4a5568; }
         
-        /* Card & Layout */
-        .day-section { margin-bottom: 20px; }
+        /* Calendar Grid */
+        .calendar-grid {
+            display: grid;
+            gap: 15px;
+            /* Responsive: 1 col on small, 2 cols on wide/fold */
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        }
+
+        /* Day Card */
+        .day-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .day-header { 
-            background: #edf2f7; 
-            padding: 8px 12px; 
-            border-radius: 8px 8px 0 0; 
-            font-size: 0.9rem; 
-            font-weight: bold; 
-            color: #718096;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            background: #edf2f7; padding: 10px 15px; font-weight: 700; color: #4a5568; 
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .day-body { 
-            background: white; 
-            min-height: 50px; 
-            border: 1px solid #e2e8f0; 
-            border-top: none; 
-            border-radius: 0 0 8px 8px; 
-            padding: 10px; 
-        }
+        .day-body { padding: 10px; min-height: 40px; }
 
         /* Dish Item */
         .dish-item { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            padding: 8px 0; 
-            border-bottom: 1px solid #f0f0f0; 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 8px; margin-bottom: 6px; background: #fff; border-radius: 6px; border: 1px solid #f0f0f0;
         }
-        .dish-item:last-child { border-bottom: none; }
-        .dish-name { font-weight: 500; font-size: 1rem; }
-        .dish-actions a { color: #5a67d8; text-decoration: none; margin-right: 10px; font-size: 0.9rem;}
-        .dish-actions button { background: none; border: none; color: #e53e3e; cursor: pointer; font-size: 1.2rem; }
+        .dish-info { display: flex; align-items: center; gap: 8px; overflow: hidden;}
+        .dish-name { font-weight: 500; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        .btn-link { 
+            background: #ebf4ff; color: #4299e1; border: none; padding: 4px 8px; border-radius: 4px; 
+            font-size: 0.75rem; text-decoration: none; font-weight: bold; flex-shrink: 0;
+        }
+        .btn-delete { background: none; border: none; color: #cbd5e0; cursor: pointer; font-size: 1.2rem; line-height: 1; padding: 0 5px;}
+        .btn-delete:hover { color: #e53e3e; }
 
-        /* Floating Input Form (Fixed at bottom) */
-        .input-area {
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-            background: white;
+        /* Fixed Input Bar */
+        .input-bar {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid #e2e8f0;
             padding: 15px;
-            box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
             z-index: 100;
         }
-        select, input {
-            padding: 12px;
-            border: 1px solid #cbd5e0;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-        select { flex: 1; } /* Day selector */
-        input { flex: 2; }  /* Name input */
+        .input-row-main { display: flex; gap: 8px; max-width: 800px; margin: 0 auto; }
+        .input-row-sub { display: none; margin-top: 10px; max-width: 800px; margin: 0 auto; animation: slideDown 0.2s ease-out; }
         
-        .btn-add {
-            background: #2d3748;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-weight: bold;
-            flex: 0 0 auto;
-        }
-
-        /* Utility */
-        .header-actions { text-align: right; margin-bottom: 10px; }
-        .btn-reset { font-size: 0.8rem; color: #e53e3e; background: none; border: 1px solid #e53e3e; padding: 4px 8px; border-radius: 4px; }
-        .notion-tag { font-size: 0.7rem; background: #ebf4ff; color: #4299e1; padding: 2px 6px; border-radius: 4px; margin-left: 5px; }
+        select, input { padding: 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 16px; outline: none; background: white;}
+        select { flex: 0 0 80px; font-weight: bold; }
+        input { flex: 1; }
+        
+        .btn-icon { background: #edf2f7; border: none; border-radius: 8px; width: 44px; font-size: 1.2rem; cursor: pointer; color: #4a5568;}
+        .btn-icon.active { background: #4299e1; color: white; }
+        .btn-add { background: #2d3748; color: white; border: none; padding: 0 24px; border-radius: 8px; font-weight: bold; cursor: pointer;}
+        
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="header-actions">
-        <button onclick="clearWeek()" class="btn-reset">Reset Week ↻</button>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h1>Weekly Menu 🗓️</h1>
+        <button onclick="clearWeek()" style="color:#e53e3e; background:none; border:none; font-size:0.8rem;">Reset</button>
     </div>
-    <h1>Weekly Planner 🗓️</h1>
 
-    <div id="calendarView"></div>
-    
-    <div style="height: 100px;"></div>
+    <div id="calendarView" class="calendar-grid"></div>
 </div>
 
-<div class="input-area">
-    <select id="daySelect">
-        <option value="Mon">Mon</option>
-        <option value="Tue">Tue</option>
-        <option value="Wed">Wed</option>
-        <option value="Thu">Thu</option>
-        <option value="Fri">Fri</option>
-        <option value="Sat">Sat</option>
-        <option value="Sun">Sun</option>
-    </select>
-    <input type="text" id="dishName" placeholder="Menu...">
-    <input type="text" id="notionLink" placeholder="URL (Optional)" style="display:none;"> <button onclick="addDish()" class="btn-add">Add</button>
+<div class="input-bar">
+    <div class="input-row-main">
+        <select id="daySelect">
+            <option value="Mon">Mon</option>
+            <option value="Tue">Tue</option>
+            <option value="Wed">Wed</option>
+            <option value="Thu">Thu</option>
+            <option value="Fri">Fri</option>
+            <option value="Sat">Sat</option>
+            <option value="Sun">Sun</option>
+        </select>
+        <input type="text" id="dishName" placeholder="Dish Name...">
+        <button class="btn-icon" onclick="toggleLinkInput()" id="linkToggleBtn">📎</button>
+        <button onclick="addDish()" class="btn-add">Add</button>
+    </div>
+    <div class="input-row-sub" id="linkInputRow">
+        <input type="text" id="notionLink" placeholder="Paste Notion URL here...">
+    </div>
 </div>
 
 <script>
-    // Data Structure: Array of objects { id, day, name, link }
     let planner = JSON.parse(localStorage.getItem('myMenuApp_planner')) || [];
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -122,61 +105,63 @@
         view.innerHTML = '';
 
         days.forEach(day => {
-            // Filter dishes for this day
             const daysDishes = planner.filter(d => d.day === day);
-            
             let dishesHtml = '';
-            if (daysDishes.length === 0) {
-                dishesHtml = '<div style="color:#a0aec0; font-size:0.9rem; text-align:center;">No Plan</div>';
-            } else {
-                daysDishes.forEach(dish => {
-                    let linkIcon = dish.link ? `<a href="${dish.link}" target="_blank">Recipe ↗</a>` : '';
-                    dishesHtml += `
-                        <div class="dish-item">
-                            <div>
-                                <span class="dish-name">${dish.name}</span>
-                            </div>
-                            <div class="dish-actions">
-                                ${linkIcon}
-                                <button onclick="removeDish(${dish.id})">×</button>
-                            </div>
+            
+            daysDishes.forEach(dish => {
+                let linkBtn = dish.link ? `<a href="${dish.link}" target="_blank" class="btn-link">LINK ↗</a>` : '';
+                dishesHtml += `
+                    <div class="dish-item">
+                        <div class="dish-info">
+                            <span class="dish-name">${dish.name}</span>
+                            ${linkBtn}
                         </div>
-                    `;
-                });
-            }
+                        <button onclick="removeDish(${dish.id})" class="btn-delete">×</button>
+                    </div>
+                `;
+            });
+
+            // Empty state
+            if(daysDishes.length === 0) dishesHtml = '<div style="color:#cbd5e0; font-size:0.8rem; text-align:center; padding:10px;">-</div>';
 
             view.innerHTML += `
-                <div class="day-section">
-                    <div class="day-header">
-                        <span>${day}</span>
-                    </div>
-                    <div class="day-body">
-                        ${dishesHtml}
-                    </div>
+                <div class="day-card">
+                    <div class="day-header">${day}</div>
+                    <div class="day-body">${dishesHtml}</div>
                 </div>
             `;
         });
     }
 
+    function toggleLinkInput() {
+        const row = document.getElementById('linkInputRow');
+        const btn = document.getElementById('linkToggleBtn');
+        if (row.style.display === 'block') {
+            row.style.display = 'none';
+            btn.classList.remove('active');
+        } else {
+            row.style.display = 'block';
+            btn.classList.add('active');
+        }
+    }
+
     function addDish() {
         const day = document.getElementById('daySelect').value;
         const nameInput = document.getElementById('dishName');
-        const name = nameInput.value;
-        // Simple URL prompt if needed, for now just name to keep UI clean
-        // To add URL: type "Curry http..." or we can add a toggle.
-        // Let's parse URL from text if present, or just simple name for now.
+        const linkInput = document.getElementById('notionLink');
         
-        if(name) {
-            const newDish = {
+        if(nameInput.value) {
+            planner.push({
                 id: Date.now(),
                 day: day,
-                name: name,
-                link: '' // Simplified for speed
-            };
-            planner.push(newDish);
+                name: nameInput.value,
+                link: linkInput.value
+            });
             save();
             render();
             nameInput.value = '';
+            linkInput.value = '';
+            // Don't close link input automatically, in case user adds multiple links
         }
     }
 
@@ -187,7 +172,7 @@
     }
 
     function clearWeek() {
-        if(confirm('Start a new week? All menus will be cleared.')) {
+        if(confirm('Clear all?')) {
             planner = [];
             save();
             render();
@@ -198,7 +183,6 @@
         localStorage.setItem('myMenuApp_planner', JSON.stringify(planner));
     }
 
-    // Initial Render
     render();
 </script>
 
