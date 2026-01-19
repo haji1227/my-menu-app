@@ -17,7 +17,7 @@
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
             padding: 5px; 
-            padding-bottom: 180px; /* Increased safe area for taller wrapped content */
+            padding-bottom: 200px; /* Extra space for bottom elements */
             padding-top: env(safe-area-inset-top);
             background: #f8f9fa; 
             color: #2d3748; 
@@ -56,14 +56,14 @@
         .day-cell {
             background: white; 
             min-height: 75px; 
-            height: auto; /* Allow grow */
+            height: auto; 
             padding: 2px; 
             position: relative; 
             cursor: pointer;
             display: flex; 
             flex-direction: column; 
             gap: 2px;
-            overflow: visible; /* Show overflow */
+            overflow: visible; 
         }
         .day-cell:active { background: #f7fafc; } 
         .day-cell.other-month { background: #fbfbfb; color: #a0aec0; }
@@ -72,30 +72,23 @@
         
         .date-number { font-size: 0.7rem; font-weight: bold; margin-bottom: 2px; padding-left: 2px; }
         
-        /* Dish Chips - Wrapping Enabled */
+        /* Dish Chips */
         .dish-chip {
             font-size: 0.65rem; 
             padding: 3px 4px; 
             border-radius: 4px;
-            
-            /* Wrapping Logic */
-            white-space: normal;       /* Allow wrapping */
-            word-wrap: break-word;     /* Break long words */
-            word-break: break-word;    /* Break long words */
-            line-height: 1.2;          /* Tighter line height for multiline */
-            height: auto;              /* Allow height to grow */
-            
+            white-space: normal;       
+            word-wrap: break-word;     
+            word-break: break-word;    
+            line-height: 1.2;          
+            height: auto;              
             display: flex; 
-            align-items: flex-start; /* Align icon to top */
+            align-items: flex-start; 
             gap: 3px;
             color: #2d3748; border: 1px solid transparent;
             margin-bottom: 1px;
         }
-        .dish-chip span { 
-            font-size: 0.7rem; 
-            margin-top: 1px; /* Adjust icon position slightly */
-            flex-shrink: 0; /* Don't shrink icon */
-        } 
+        .dish-chip span { font-size: 0.7rem; margin-top: 1px; flex-shrink: 0; } 
         
         .day-cell.other-month .dish-chip { opacity: 0.6; }
 
@@ -123,27 +116,53 @@
         input[type="radio"] { display: none; }
         input[type="radio"]:checked + .radio-label { background: white; color: #2d3748; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
 
+        /* Input Row & Suggestions */
+        .input-wrapper { position: relative; flex: 1; } /* Wrapper for positioning suggestions */
+
         .input-row-main { display: flex; gap: 5px; max-width: 900px; margin: 0 auto; align-items: center; }
         .input-row-sub { display: none; margin-top: 8px; max-width: 900px; margin: 0 auto; animation: slideDown 0.2s; }
         
         input[type="text"] { 
             padding: 8px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 16px; 
-            flex: 1; /* Grow to fill space */
-            min-width: 0; /* Allow shrinking below content size */
+            width: 100%; box-sizing: border-box;
             outline: none; -webkit-appearance: none; 
         }
         input[type="text"]:focus { border-color: #4299e1; }
         
+        /* Suggestions List */
+        .suggestions-list {
+            position: absolute;
+            bottom: 100%; /* Appears ABOVE the input */
+            left: 0; right: 0;
+            background: white;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
+            max-height: 200px;
+            overflow-y: auto;
+            display: none; /* Hidden by default */
+            z-index: 150;
+            margin-bottom: 5px;
+        }
+        .suggestion-item {
+            padding: 10px;
+            border-bottom: 1px solid #f7fafc;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex; justify-content: space-between;
+        }
+        .suggestion-item:last-child { border-bottom: none; }
+        .suggestion-item:hover, .suggestion-item:active { background: #ebf8ff; }
+        .suggestion-link-badge { font-size: 0.7rem; color: #ed8936; background: #fffaf0; padding: 2px 4px; border-radius: 4px; }
+
         .btn-icon { background: #edf2f7; border: none; border-radius: 8px; width: 38px; height: 38px; font-size: 1.1rem; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center;}
         .btn-icon.active { background: #4299e1; color: white; }
         .btn-add { background: #2d3748; color: white; border: none; padding: 0 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.85rem; height: 38px; flex-shrink: 0;}
-        .btn-add:active { transform: scale(0.98); }
 
         /* Modal */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; }
         .modal-content { background: white; width: 100%; max-width: 600px; margin: 0 auto; border-radius: 20px 20px 0 0; padding: 20px; max-height: 80vh; overflow-y: auto; padding-bottom: 40px;}
         .history-item { padding: 15px 5px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; cursor: pointer; }
-        .history-item:active { background: #f7fafc; }
 
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -179,24 +198,20 @@
     <div class="bar-header">
         <span class="selected-date-label" id="selectedDateDisplay">Select a date</span>
         <div class="meal-selector">
-            <label>
-                <input type="radio" name="mealType" value="breakfast">
-                <span class="radio-label">Breakfast</span>
-            </label>
-            <label>
-                <input type="radio" name="mealType" value="lunch">
-                <span class="radio-label">Lunch</span>
-            </label>
-            <label>
-                <input type="radio" name="mealType" value="dinner" checked>
-                <span class="radio-label">Dinner</span>
-            </label>
+            <label><input type="radio" name="mealType" value="breakfast"><span class="radio-label">Breakfast</span></label>
+            <label><input type="radio" name="mealType" value="lunch"><span class="radio-label">Lunch</span></label>
+            <label><input type="radio" name="mealType" value="dinner" checked><span class="radio-label">Dinner</span></label>
         </div>
     </div>
 
     <div class="input-row-main">
         <button class="btn-icon" onclick="openHistory()">📖</button>
-        <input type="text" id="dishName" placeholder="Menu...">
+        
+        <div class="input-wrapper">
+            <input type="text" id="dishName" placeholder="Menu..." autocomplete="off">
+            <div id="suggestions" class="suggestions-list"></div>
+        </div>
+
         <button class="btn-icon" onclick="toggleLinkInput()" id="linkToggleBtn">📎</button>
         <button onclick="addDish()" class="btn-add">Add</button>
     </div>
@@ -228,9 +243,74 @@
     function init() {
         renderCalendar();
         updateSelectionDisplay();
+        setupSuggestions();
     }
 
-    // Helper to format YYYY-MM-DD
+    // --- Suggestion Logic ---
+    function setupSuggestions() {
+        const input = document.getElementById('dishName');
+        const box = document.getElementById('suggestions');
+
+        input.addEventListener('input', (e) => {
+            const val = e.target.value.toLowerCase();
+            box.innerHTML = '';
+            
+            if (!val) {
+                box.style.display = 'none';
+                return;
+            }
+
+            // Filter history (unique names only)
+            const matches = history.filter(h => h.name.toLowerCase().includes(val));
+            const uniqueMatches = [];
+            const seen = new Set();
+            
+            matches.forEach(m => {
+                if(!seen.has(m.name)) {
+                    seen.add(m.name);
+                    uniqueMatches.push(m);
+                }
+            });
+
+            if (uniqueMatches.length === 0) {
+                box.style.display = 'none';
+                return;
+            }
+
+            uniqueMatches.slice(0, 5).forEach(item => { // Show top 5
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                let linkBadge = item.link ? '<span class="suggestion-link-badge">Link</span>' : '';
+                div.innerHTML = `<span>${item.name}</span> ${linkBadge}`;
+                
+                div.onclick = () => {
+                    input.value = item.name;
+                    // Auto fill link if present
+                    if(item.link) {
+                        document.getElementById('notionLink').value = item.link;
+                        // Show the link input briefly or toggle it on so user knows
+                        const row = document.getElementById('linkInputRow');
+                        const btn = document.getElementById('linkToggleBtn');
+                        row.style.display = 'block';
+                        btn.classList.add('active');
+                    }
+                    box.style.display = 'none';
+                };
+                box.appendChild(div);
+            });
+            box.style.display = 'block';
+        });
+
+        // Hide when clicking outside
+        document.addEventListener('click', (e) => {
+            if (e.target !== input && e.target !== box) {
+                box.style.display = 'none';
+            }
+        });
+    }
+
+    // --- Standard Logic ---
+
     function formatDateKey(dateObj) {
         const y = dateObj.getFullYear();
         const m = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -275,31 +355,26 @@
 
         const year = viewDate.getFullYear();
         const month = viewDate.getMonth();
-        
         document.getElementById('currentMonthDisplay').textContent = 
             viewDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
 
         const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
-        const daysInMonth = lastDay.getDate();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
         const startDayIndex = (firstDay.getDay() + 6) % 7;
 
-        // 1. Previous Month
+        // Prev Month
         const prevMonthLastDay = new Date(year, month, 0).getDate();
         for (let i = startDayIndex - 1; i >= 0; i--) {
-            const d = prevMonthLastDay - i;
-            renderCell(grid, new Date(year, month - 1, d), false);
+            renderCell(grid, new Date(year, month - 1, prevMonthLastDay - i), false);
         }
-
-        // 2. Current Month
+        // Current
         for (let d = 1; d <= daysInMonth; d++) {
             renderCell(grid, new Date(year, month, d), true);
         }
-
-        // 3. Next Month
-        const totalCellsSoFar = startDayIndex + daysInMonth;
-        const remainingCells = (7 - (totalCellsSoFar % 7)) % 7;
-        for (let d = 1; d <= remainingCells; d++) {
+        // Next
+        const totalCells = startDayIndex + daysInMonth;
+        const remaining = (7 - (totalCells % 7)) % 7;
+        for (let d = 1; d <= remaining; d++) {
             renderCell(grid, new Date(year, month + 1, d), false);
         }
     }
@@ -308,6 +383,8 @@
         selectedDateStr = dateKey;
         renderCalendar();
         updateSelectionDisplay();
+        // Hide suggestions on date change
+        document.getElementById('suggestions').style.display = 'none';
     }
 
     function updateSelectionDisplay() {
@@ -332,12 +409,21 @@
             if (!plannerData[selectedDateStr]) plannerData[selectedDateStr] = [];
             plannerData[selectedDateStr].push({ id: Date.now(), name: name, link: link, type: mealType });
 
-            if (!history.some(h => h.name === name)) {
+            // Add to history if new
+            const exists = history.some(h => h.name === name);
+            if (!exists) {
                 history.push({ name: name, link: link });
                 localStorage.setItem('myMenuApp_history', JSON.stringify(history));
+            } else if (link && !history.find(h => h.name === name).link) {
+                // Update link if previously missing
+                const idx = history.findIndex(h => h.name === name);
+                history[idx].link = link;
+                localStorage.setItem('myMenuApp_history', JSON.stringify(history));
             }
+
             save(); renderCalendar();
             nameInput.value = ''; linkInput.value = '';
+            document.getElementById('suggestions').style.display = 'none';
         }
     }
 
