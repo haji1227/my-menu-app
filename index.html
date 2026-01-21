@@ -17,7 +17,7 @@
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
             padding: 5px; 
-            padding-bottom: 200px; /* Extra space for bottom elements */
+            padding-bottom: 200px; 
             padding-top: env(safe-area-inset-top);
             background: #f8f9fa; 
             color: #2d3748; 
@@ -116,53 +116,49 @@
         input[type="radio"] { display: none; }
         input[type="radio"]:checked + .radio-label { background: white; color: #2d3748; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
 
-        /* Input Row & Suggestions */
-        .input-wrapper { position: relative; flex: 1; } /* Wrapper for positioning suggestions */
+        .input-wrapper { position: relative; flex: 1; } 
 
         .input-row-main { display: flex; gap: 5px; max-width: 900px; margin: 0 auto; align-items: center; }
         .input-row-sub { display: none; margin-top: 8px; max-width: 900px; margin: 0 auto; animation: slideDown 0.2s; }
         
         input[type="text"] { 
             padding: 8px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 16px; 
-            width: 100%; box-sizing: border-box;
-            outline: none; -webkit-appearance: none; 
+            width: 100%; box-sizing: border-box; outline: none; -webkit-appearance: none; 
         }
         input[type="text"]:focus { border-color: #4299e1; }
         
         /* Suggestions List */
         .suggestions-list {
-            position: absolute;
-            bottom: 100%; /* Appears ABOVE the input */
-            left: 0; right: 0;
-            background: white;
-            border: 1px solid #cbd5e0;
-            border-radius: 8px;
-            box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
-            max-height: 200px;
-            overflow-y: auto;
-            display: none; /* Hidden by default */
-            z-index: 150;
-            margin-bottom: 5px;
+            position: absolute; bottom: 100%; left: 0; right: 0;
+            background: white; border: 1px solid #cbd5e0; border-radius: 8px;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.1); max-height: 200px; overflow-y: auto;
+            display: none; z-index: 150; margin-bottom: 5px;
         }
-        .suggestion-item {
-            padding: 10px;
-            border-bottom: 1px solid #f7fafc;
-            font-size: 0.9rem;
-            cursor: pointer;
-            display: flex; justify-content: space-between;
-        }
+        .suggestion-item { padding: 10px; border-bottom: 1px solid #f7fafc; font-size: 0.9rem; cursor: pointer; display: flex; justify-content: space-between; }
         .suggestion-item:last-child { border-bottom: none; }
-        .suggestion-item:hover, .suggestion-item:active { background: #ebf8ff; }
         .suggestion-link-badge { font-size: 0.7rem; color: #ed8936; background: #fffaf0; padding: 2px 4px; border-radius: 4px; }
 
         .btn-icon { background: #edf2f7; border: none; border-radius: 8px; width: 38px; height: 38px; font-size: 1.1rem; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center;}
         .btn-icon.active { background: #4299e1; color: white; }
         .btn-add { background: #2d3748; color: white; border: none; padding: 0 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.85rem; height: 38px; flex-shrink: 0;}
 
-        /* Modal */
+        /* Modal & Action Sheet */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; }
         .modal-content { background: white; width: 100%; max-width: 600px; margin: 0 auto; border-radius: 20px 20px 0 0; padding: 20px; max-height: 80vh; overflow-y: auto; padding-bottom: 40px;}
+        
         .history-item { padding: 15px 5px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; cursor: pointer; }
+
+        /* Dish Option Menu */
+        .action-sheet-title { font-weight: 800; font-size: 1.1rem; margin-bottom: 20px; text-align: center; }
+        .action-btn { 
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            width: 100%; padding: 14px; margin-bottom: 10px; 
+            border-radius: 12px; font-weight: bold; font-size: 1rem; border: none; cursor: pointer; 
+        }
+        .btn-link-action { background: #f0fff4; color: #2f855a; border: 1px solid #c6f6d5; }
+        .btn-edit-action { background: #edf2f7; color: #4a5568; }
+        .btn-delete-action { background: #fff5f5; color: #e53e3e; }
+        .btn-cancel-action { background: transparent; color: #a0aec0; font-size: 0.9rem; margin-top: 5px;}
 
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -206,12 +202,10 @@
 
     <div class="input-row-main">
         <button class="btn-icon" onclick="openHistory()">📖</button>
-        
         <div class="input-wrapper">
             <input type="text" id="dishName" placeholder="Menu..." autocomplete="off">
             <div id="suggestions" class="suggestions-list"></div>
         </div>
-
         <button class="btn-icon" onclick="toggleLinkInput()" id="linkToggleBtn">📎</button>
         <button onclick="addDish()" class="btn-add">Add</button>
     </div>
@@ -220,13 +214,19 @@
     </div>
 </div>
 
-<div id="historyModal" class="modal-overlay" onclick="closeHistory(event)">
+<div id="historyModal" class="modal-overlay" onclick="closeModal(event, 'historyModal')">
     <div class="modal-content">
         <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
             <h2 style="margin:0; font-size:1.2rem;">Library 📚</h2>
             <button onclick="document.getElementById('historyModal').style.display='none'" style="background:#edf2f7; border:none; width:30px; height:30px; border-radius:50%; font-size:1.2rem; display:flex; align-items:center; justify-content:center;">×</button>
         </div>
         <div id="historyList"></div>
+    </div>
+</div>
+
+<div id="dishModal" class="modal-overlay" onclick="closeModal(event, 'dishModal')">
+    <div class="modal-content">
+        <div id="dishModalContent"></div>
     </div>
 </div>
 
@@ -250,49 +250,27 @@
     function setupSuggestions() {
         const input = document.getElementById('dishName');
         const box = document.getElementById('suggestions');
-
         input.addEventListener('input', (e) => {
             const val = e.target.value.toLowerCase();
             box.innerHTML = '';
-            
-            if (!val) {
-                box.style.display = 'none';
-                return;
-            }
+            if (!val) { box.style.display = 'none'; return; }
 
-            // Filter history (unique names only)
             const matches = history.filter(h => h.name.toLowerCase().includes(val));
-            const uniqueMatches = [];
-            const seen = new Set();
-            
-            matches.forEach(m => {
-                if(!seen.has(m.name)) {
-                    seen.add(m.name);
-                    uniqueMatches.push(m);
-                }
-            });
+            const uniqueMatches = []; const seen = new Set();
+            matches.forEach(m => { if(!seen.has(m.name)) { seen.add(m.name); uniqueMatches.push(m); } });
 
-            if (uniqueMatches.length === 0) {
-                box.style.display = 'none';
-                return;
-            }
-
-            uniqueMatches.slice(0, 5).forEach(item => { // Show top 5
+            if (uniqueMatches.length === 0) { box.style.display = 'none'; return; }
+            uniqueMatches.slice(0, 5).forEach(item => { 
                 const div = document.createElement('div');
                 div.className = 'suggestion-item';
                 let linkBadge = item.link ? '<span class="suggestion-link-badge">Link</span>' : '';
                 div.innerHTML = `<span>${item.name}</span> ${linkBadge}`;
-                
                 div.onclick = () => {
                     input.value = item.name;
-                    // Auto fill link if present
                     if(item.link) {
                         document.getElementById('notionLink').value = item.link;
-                        // Show the link input briefly or toggle it on so user knows
-                        const row = document.getElementById('linkInputRow');
-                        const btn = document.getElementById('linkToggleBtn');
-                        row.style.display = 'block';
-                        btn.classList.add('active');
+                        document.getElementById('linkInputRow').style.display = 'block';
+                        document.getElementById('linkToggleBtn').classList.add('active');
                     }
                     box.style.display = 'none';
                 };
@@ -300,17 +278,12 @@
             });
             box.style.display = 'block';
         });
-
-        // Hide when clicking outside
         document.addEventListener('click', (e) => {
-            if (e.target !== input && e.target !== box) {
-                box.style.display = 'none';
-            }
+            if (e.target !== input && e.target !== box) { box.style.display = 'none'; }
         });
     }
 
     // --- Standard Logic ---
-
     function formatDateKey(dateObj) {
         const y = dateObj.getFullYear();
         const m = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -338,10 +311,10 @@
                 const chip = document.createElement('div');
                 chip.className = `dish-chip ${type} ${dish.link ? 'has-link' : ''}`;
                 chip.innerHTML = `<span>${mealIcons[type]}</span> ${dish.name}`;
+                // Open Options Menu on click
                 chip.onclick = (e) => {
                     e.stopPropagation();
-                    if (confirm(`Delete "${dish.name}"?`)) { removeDish(dateKey, dish.id); } 
-                    else if(dish.link) { window.open(dish.link, '_blank'); }
+                    openDishOptions(dateKey, dish);
                 };
                 cell.appendChild(chip);
             });
@@ -362,16 +335,13 @@
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         const startDayIndex = (firstDay.getDay() + 6) % 7;
 
-        // Prev Month
         const prevMonthLastDay = new Date(year, month, 0).getDate();
         for (let i = startDayIndex - 1; i >= 0; i--) {
             renderCell(grid, new Date(year, month - 1, prevMonthLastDay - i), false);
         }
-        // Current
         for (let d = 1; d <= daysInMonth; d++) {
             renderCell(grid, new Date(year, month, d), true);
         }
-        // Next
         const totalCells = startDayIndex + daysInMonth;
         const remaining = (7 - (totalCells % 7)) % 7;
         for (let d = 1; d <= remaining; d++) {
@@ -379,25 +349,54 @@
         }
     }
 
+    // --- Dish Options Menu ---
+    function openDishOptions(dateKey, dish) {
+        const modal = document.getElementById('dishModal');
+        const content = document.getElementById('dishModalContent');
+        
+        let linkBtn = '';
+        if (dish.link) {
+            linkBtn = `<button class="action-btn btn-link-action" onclick="window.open('${dish.link}', '_blank'); document.getElementById('dishModal').style.display='none'">🔗 Open Link</button>`;
+        }
+
+        content.innerHTML = `
+            <div class="action-sheet-title">${dish.name}</div>
+            ${linkBtn}
+            <button class="action-btn btn-edit-action" onclick="copyToInput('${dish.name}', '${dish.link || ''}', '${dish.type || 'dinner'}')">✏️ Copy to Input</button>
+            <button class="action-btn btn-delete-action" onclick="deleteDishAndClose('${dateKey}', ${dish.id})">🗑 Delete</button>
+            <button class="action-btn btn-cancel-action" onclick="document.getElementById('dishModal').style.display='none'">Cancel</button>
+        `;
+        modal.style.display = 'flex';
+    }
+
+    function deleteDishAndClose(dateKey, id) {
+        removeDish(dateKey, id);
+        document.getElementById('dishModal').style.display = 'none';
+    }
+
+    function copyToInput(name, link, type) {
+        document.getElementById('dishName').value = name;
+        if(link) {
+            document.getElementById('notionLink').value = link;
+            document.getElementById('linkInputRow').style.display = 'block';
+            document.getElementById('linkToggleBtn').classList.add('active');
+        }
+        // Select radio
+        document.querySelector(`input[name="mealType"][value="${type}"]`).checked = true;
+        document.getElementById('dishModal').style.display = 'none';
+    }
+
     function selectDate(dateKey) {
         selectedDateStr = dateKey;
         renderCalendar();
         updateSelectionDisplay();
-        // Hide suggestions on date change
         document.getElementById('suggestions').style.display = 'none';
     }
-
     function updateSelectionDisplay() {
         const d = new Date(selectedDateStr);
-        const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-        document.getElementById('selectedDateDisplay').textContent = label;
+        document.getElementById('selectedDateDisplay').textContent = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     }
-
-    function changeMonth(delta) {
-        viewDate.setMonth(viewDate.getMonth() + delta);
-        renderCalendar();
-    }
-
+    function changeMonth(delta) { viewDate.setMonth(viewDate.getMonth() + delta); renderCalendar(); }
     function addDish() {
         const nameInput = document.getElementById('dishName');
         const linkInput = document.getElementById('notionLink');
@@ -409,30 +408,23 @@
             if (!plannerData[selectedDateStr]) plannerData[selectedDateStr] = [];
             plannerData[selectedDateStr].push({ id: Date.now(), name: name, link: link, type: mealType });
 
-            // Add to history if new
             const exists = history.some(h => h.name === name);
-            if (!exists) {
-                history.push({ name: name, link: link });
-                localStorage.setItem('myMenuApp_history', JSON.stringify(history));
-            } else if (link && !history.find(h => h.name === name).link) {
-                // Update link if previously missing
-                const idx = history.findIndex(h => h.name === name);
-                history[idx].link = link;
-                localStorage.setItem('myMenuApp_history', JSON.stringify(history));
+            if (!exists) { history.push({ name: name, link: link }); } 
+            else if (link && !history.find(h => h.name === name).link) { 
+                history.find(h => h.name === name).link = link; 
             }
+            localStorage.setItem('myMenuApp_history', JSON.stringify(history));
 
             save(); renderCalendar();
             nameInput.value = ''; linkInput.value = '';
             document.getElementById('suggestions').style.display = 'none';
         }
     }
-
     function removeDish(dateKey, id) {
         plannerData[dateKey] = plannerData[dateKey].filter(d => d.id !== id);
         if(plannerData[dateKey].length === 0) delete plannerData[dateKey];
         save(); renderCalendar();
     }
-
     function openHistory() {
         const modal = document.getElementById('historyModal');
         const list = document.getElementById('historyList');
@@ -444,17 +436,15 @@
             div.className = 'history-item';
             div.innerHTML = `<span style="font-weight:bold">${item.name} ${item.link?'🔗':''}</span><span style="color:#4299e1; font-size:0.8rem; display:flex; align-items:center;">+ ${currentIcon}</span>`;
             div.onclick = () => {
-                document.getElementById('dishName').value = item.name;
-                document.getElementById('notionLink').value = item.link || '';
-                addDish();
+                copyToInput(item.name, item.link || '', currentType);
+                addDish(); // Immediate add from history
                 modal.style.display = 'none';
             };
             list.appendChild(div);
         });
         modal.style.display = 'flex';
     }
-    
-    function closeHistory(e) { if(e.target.id === 'historyModal') document.getElementById('historyModal').style.display = 'none'; }
+    function closeModal(e, id) { if(e.target.id === id) document.getElementById(id).style.display = 'none'; }
     function toggleLinkInput() {
         const row = document.getElementById('linkInputRow');
         const btn = document.getElementById('linkToggleBtn');
@@ -462,7 +452,6 @@
         else { row.style.display = 'block'; btn.classList.add('active'); }
     }
     function save() { localStorage.setItem('myMenuApp_v2_planner', JSON.stringify(plannerData)); }
-
     async function shareBackup() {
         const data = { planner: plannerData, history: history };
         const file = new File([JSON.stringify(data, null, 2)], "menu-backup-monthly.json", {type: "text/plain"});
