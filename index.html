@@ -452,18 +452,40 @@
         else { row.style.display = 'block'; btn.classList.add('active'); }
     }
     function save() { localStorage.setItem('myMenuApp_v2_planner', JSON.stringify(plannerData)); }
+    
+    // --- UPDATED BACKUP LOGIC ---
     async function shareBackup() {
         const data = { planner: plannerData, history: history };
         const file = new File([JSON.stringify(data, null, 2)], "menu-backup-monthly.json", {type: "text/plain"});
+        
+        // Try Web Share first
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            try { await navigator.share({ files: [file], title: 'Meal Plan Backup', text: 'Monthly Menu Data' }); } 
-            catch (err) { console.log(err); }
-        } else { downloadFallback(file); }
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: 'Meal Plan Backup',
+                    text: 'Monthly Menu Data'
+                });
+                return; // Shared successfully
+            } catch (err) {
+                console.log("Share API failed or cancelled, trying fallback...", err);
+                // Fallthrough to download
+            }
+        }
+        
+        // Fallback: Direct Download
+        downloadFallback(file);
     }
+
     function downloadFallback(file) {
         const url = URL.createObjectURL(file);
-        const a = document.createElement('a'); a.href = url; a.download = "menu-backup-monthly.json"; a.click();
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "menu-backup-monthly.json";
+        a.click();
+        URL.revokeObjectURL(url);
     }
+
     function importData(input) {
         const file = input.files[0];
         if(!file) return;
