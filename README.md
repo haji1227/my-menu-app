@@ -4,7 +4,7 @@
 
 [👉 Open App (Live Demo)](https://haji1227.github.io/my-menu-app/)
 
-> **Note:** Replace `YOUR_GITHUB_USERNAME` and `my-menu-app` with your actual GitHub username and repository name.
+
 
 ![App Screenshot](./icon.png)
 *(Recommended: Replace this line with a screenshot of your calendar view)*
