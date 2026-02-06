@@ -24,7 +24,7 @@ Do you store your recipes in Notion, Evernote, or bookmarks, but find it cumbers
 * **Monthly Calendar View:** Drag-free, tap-to-add interface.
 * **Smart Suggestions:** Auto-complete menus from your history. The more you use it, the smarter it gets.
 * **Meal Types:** Organize by ☀️ Breakfast, 🍱 Lunch, and 🌙 Dinner.
-* **Data Backup:** Export your data as a JSON file and save it to Google Drive or iCloud via your device's share sheet.
+* **Data Backup:** Export your data as a JSON file.
 * **Responsive Design:** Optimized for mobile devices (great on foldables!) and desktops.
 
 ## 📖 How to Use
