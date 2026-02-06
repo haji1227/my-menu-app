@@ -6,7 +6,7 @@
 
 
 
-![App Screenshot](./icon.png)
+![App Screenshot](Screenshot_20260206-161157.png)
 *(Recommended: Replace this line with a screenshot of your calendar view)*
 
 ## ✨ Why Meal Plan?
