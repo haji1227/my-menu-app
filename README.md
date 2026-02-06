@@ -37,9 +37,11 @@ Do you store your recipes in Notion, Evernote, or bookmarks, but find it cumbers
 
 ## 💾 Backup & Restore
 
-Since data is stored locally on your device, we recommend backing up regularly.
-* **Save:** Tap the `📤 Save` button to export your data. You can save the JSON file to your cloud storage.
-* **Load:** Tap `📥 Load` to restore your data from a backup file.
+Data is stored locally on your device. To prevent data loss, please backup manually.
+
+* **Save:** Tap `📤 Save` to generate a backup file. You can save it to **Google Drive**, **iCloud**, or **Local Files** via your device's share menu.
+* **Load:** Tap `📥 Load` to restore your data from a previously saved JSON file.
+
 
 ## 🛠 Tech Stack
 
