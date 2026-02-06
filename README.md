@@ -2,7 +2,7 @@
 
 **A privacy-first, lightweight meal planner for Notion users and minimalists.**
 
-[👉 Open App (Live Demo)](https://YOUR_GITHUB_USERNAME.github.io/my-menu-app/)
+[👉 Open App (Live Demo)](https://haji1227.github.io/my-menu-app/)
 
 > **Note:** Replace `YOUR_GITHUB_USERNAME` and `my-menu-app` with your actual GitHub username and repository name.
 
