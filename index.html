@@ -54,16 +54,8 @@
         
         /* Date Cell */
         .day-cell {
-            background: white; 
-            min-height: 75px; 
-            height: auto; 
-            padding: 2px; 
-            position: relative; 
-            cursor: pointer;
-            display: flex; 
-            flex-direction: column; 
-            gap: 2px;
-            overflow: visible; 
+            background: white; min-height: 75px; height: auto; padding: 2px; position: relative; cursor: pointer;
+            display: flex; flex-direction: column; gap: 2px; overflow: visible; 
         }
         .day-cell:active { background: #f7fafc; } 
         .day-cell.other-month { background: #fbfbfb; color: #a0aec0; }
@@ -74,19 +66,9 @@
         
         /* Dish Chips */
         .dish-chip {
-            font-size: 0.65rem; 
-            padding: 3px 4px; 
-            border-radius: 4px;
-            white-space: normal;       
-            word-wrap: break-word;     
-            word-break: break-word;    
-            line-height: 1.2;          
-            height: auto;              
-            display: flex; 
-            align-items: flex-start; 
-            gap: 3px;
-            color: #2d3748; border: 1px solid transparent;
-            margin-bottom: 1px;
+            font-size: 0.65rem; padding: 3px 4px; border-radius: 4px;
+            white-space: normal; word-wrap: break-word; word-break: break-word; line-height: 1.2; height: auto;              
+            display: flex; align-items: flex-start; gap: 3px; color: #2d3748; border: 1px solid transparent; margin-bottom: 1px;
         }
         .dish-chip span { font-size: 0.7rem; margin-top: 1px; flex-shrink: 0; } 
         
@@ -100,8 +82,7 @@
         /* Fixed Input Bar */
         .input-bar {
             position: fixed; bottom: 0; left: 0; right: 0;
-            background: rgba(255, 255, 255, 0.96);
-            backdrop-filter: blur(5px);
+            background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(5px);
             border-top: 1px solid #e2e8f0; padding: 8px 8px 20px 8px; 
             box-shadow: 0 -4px 20px rgba(0,0,0,0.08); z-index: 100;
         }
@@ -202,6 +183,8 @@
 
     <div class="input-row-main">
         <button class="btn-icon" onclick="openHistory()">📖</button>
+        <button class="btn-icon" onclick="suggestNextMenu()" title="Suggest next menu">🎲</button>
+        
         <div class="input-wrapper">
             <input type="text" id="dishName" placeholder="Menu..." autocomplete="off">
             <div id="suggestions" class="suggestions-list"></div>
@@ -283,6 +266,79 @@
         });
     }
 
+    // --- NEW SMART SMART SUGGESTION (DICE) LOGIC ---
+    function suggestNextMenu() {
+        if (history.length === 0) {
+            alert("Your library is empty. Add some dishes first!");
+            return;
+        }
+
+        // 1. Find the last cooked date for every dish in history
+        const dishLastCooked = {};
+        
+        // Scan all planner data
+        Object.keys(plannerData).forEach(dateKey => {
+            const dishes = plannerData[dateKey];
+            dishes.forEach(dish => {
+                const currentLast = dishLastCooked[dish.name];
+                if (!currentLast || dateKey > currentLast) {
+                    dishLastCooked[dish.name] = dateKey;
+                }
+            });
+        });
+
+        // 2. Filter and calculate intervals
+        const now = new Date();
+        const oneWeekAgoStr = formatDateKey(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000));
+        
+        const candidates = [];
+
+        history.forEach(item => {
+            const lastDate = dishLastCooked[item.name];
+            
+            if (!lastDate) {
+                // Never cooked before -> Max priority
+                candidates.push({ item: item, score: 99999 });
+            } else if (lastDate < oneWeekAgoStr) {
+                // Cooked more than 1 week ago -> Eligible!
+                // Score = days passed since last cooked (higher means longer interval)
+                const daysPassed = Math.floor((now - new Date(lastDate)) / (1000 * 60 * 60 * 24));
+                candidates.push({ item: item, score: daysPassed });
+            }
+            // If cooked within the last 7 days, it's skipped!
+        });
+
+        if (candidates.length === 0) {
+            alert("All dishes in your library were cooked recently (within 7 days)!");
+            return;
+        }
+
+        // 3. Sort candidates by score descending (oldest interval first)
+        candidates.sort((a, b) => b.score - a.score);
+
+        // Pick from the top pool (if multiple have never been cooked or are equally old, add a small randomness)
+        const topScore = candidates[0].score;
+        const topPool = candidates.filter(c => c.score >= topScore - 2 || c.score > 1000); // Pool of oldest or never-cooked
+        const finalSelection = topPool[Math.floor(Math.random() * topPool.length)].item;
+
+        // 4. Fill the input row with the recommendation
+        document.getElementById('dishName').value = finalSelection.name;
+        if (finalSelection.link) {
+            document.getElementById('notionLink').value = finalSelection.link;
+            document.getElementById('linkInputRow').style.display = 'block';
+            document.getElementById('linkToggleBtn').classList.add('active');
+        } else {
+            document.getElementById('notionLink').value = '';
+            document.getElementById('linkInputRow').style.display = 'none';
+            document.getElementById('linkToggleBtn').classList.remove('active');
+        }
+
+        // Highlight input to let user know
+        const input = document.getElementById('dishName');
+        input.style.backgroundColor = '#fffaf0';
+        setTimeout(() => { input.style.backgroundColor = 'white'; }, 500);
+    }
+
     // --- Standard Logic ---
     function formatDateKey(dateObj) {
         const y = dateObj.getFullYear();
@@ -311,7 +367,6 @@
                 const chip = document.createElement('div');
                 chip.className = `dish-chip ${type} ${dish.link ? 'has-link' : ''}`;
                 chip.innerHTML = `<span>${mealIcons[type]}</span> ${dish.name}`;
-                // Open Options Menu on click
                 chip.onclick = (e) => {
                     e.stopPropagation();
                     openDishOptions(dateKey, dish);
@@ -381,7 +436,6 @@
             document.getElementById('linkInputRow').style.display = 'block';
             document.getElementById('linkToggleBtn').classList.add('active');
         }
-        // Select radio
         document.querySelector(`input[name="mealType"][value="${type}"]`).checked = true;
         document.getElementById('dishModal').style.display = 'none';
     }
@@ -437,7 +491,7 @@
             div.innerHTML = `<span style="font-weight:bold">${item.name} ${item.link?'🔗':''}</span><span style="color:#4299e1; font-size:0.8rem; display:flex; align-items:center;">+ ${currentIcon}</span>`;
             div.onclick = () => {
                 copyToInput(item.name, item.link || '', currentType);
-                addDish(); // Immediate add from history
+                addDish(); 
                 modal.style.display = 'none';
             };
             list.appendChild(div);
@@ -453,39 +507,19 @@
     }
     function save() { localStorage.setItem('myMenuApp_v2_planner', JSON.stringify(plannerData)); }
     
-    // --- UPDATED BACKUP LOGIC ---
     async function shareBackup() {
         const data = { planner: plannerData, history: history };
         const file = new File([JSON.stringify(data, null, 2)], "menu-backup-monthly.json", {type: "text/plain"});
-        
-        // Try Web Share first
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            try {
-                await navigator.share({
-                    files: [file],
-                    title: 'Meal Plan Backup',
-                    text: 'Monthly Menu Data'
-                });
-                return; // Shared successfully
-            } catch (err) {
-                console.log("Share API failed or cancelled, trying fallback...", err);
-                // Fallthrough to download
-            }
+            try { await navigator.share({ files: [file], title: 'Meal Plan Backup', text: 'Monthly Menu Data' }); return; } 
+            catch (err) { console.log(err); }
         }
-        
-        // Fallback: Direct Download
         downloadFallback(file);
     }
-
     function downloadFallback(file) {
         const url = URL.createObjectURL(file);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = "menu-backup-monthly.json";
-        a.click();
-        URL.revokeObjectURL(url);
+        const a = document.createElement('a'); a.href = url; a.download = "menu-backup-monthly.json"; a.click();
     }
-
     function importData(input) {
         const file = input.files[0];
         if(!file) return;
