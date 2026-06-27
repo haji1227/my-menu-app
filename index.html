@@ -273,55 +273,60 @@
             return;
         }
 
-        // 1. Find the last cooked date for every dish in history
-        const dishLastCooked = {};
+        // 1. 各メニューの「最終調理日」と「調理回数」を集計する
+        const dishStats = {};
         
-        // Scan all planner data
+        // plannerDataを全て走査
         Object.keys(plannerData).forEach(dateKey => {
             const dishes = plannerData[dateKey];
             dishes.forEach(dish => {
-                const currentLast = dishLastCooked[dish.name];
-                if (!currentLast || dateKey > currentLast) {
-                    dishLastCooked[dish.name] = dateKey;
+                if (!dishStats[dish.name]) {
+                    dishStats[dish.name] = { lastCooked: dateKey, count: 0 };
                 }
+                
+                // 最終調理日を更新
+                if (dateKey > dishStats[dish.name].lastCooked) {
+                    dishStats[dish.name].lastCooked = dateKey;
+                }
+                // 調理回数をカウントアップ
+                dishStats[dish.name].count += 1;
             });
         });
 
-        // 2. Filter and calculate intervals
+        // 2. 候補の絞り込み
         const now = new Date();
-        const oneWeekAgoStr = formatDateKey(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000));
+        // 4週間（28日）前の日付を計算
+        const fourWeeksAgoStr = formatDateKey(new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000));
         
         const candidates = [];
 
         history.forEach(item => {
-            const lastDate = dishLastCooked[item.name];
+            const stats = dishStats[item.name];
             
-            if (!lastDate) {
-                // Never cooked before -> Max priority
-                candidates.push({ item: item, score: 99999 });
-            } else if (lastDate < oneWeekAgoStr) {
-                // Cooked more than 1 week ago -> Eligible!
-                // Score = days passed since last cooked (higher means longer interval)
-                const daysPassed = Math.floor((now - new Date(lastDate)) / (1000 * 60 * 60 * 24));
-                candidates.push({ item: item, score: daysPassed });
+            if (!stats) {
+                // まだ一度もカレンダーに登録されていない（履歴にあるだけ） -> 候補に入れる（回数0）
+                candidates.push({ item: item, count: 0 });
+            } else if (stats.lastCooked < fourWeeksAgoStr) {
+                // 最後に作ってから4週間以上経過している -> 候補に入れる
+                candidates.push({ item: item, count: stats.count });
             }
-            // If cooked within the last 7 days, it's skipped!
+            // 4週間以内に作られている場合はスキップされる
         });
 
         if (candidates.length === 0) {
-            alert("All dishes in your library were cooked recently (within 7 days)!");
+            alert("All dishes in your library were cooked recently (within 4 weeks)!");
             return;
         }
 
-        // 3. Sort candidates by score descending (oldest interval first)
-        candidates.sort((a, b) => b.score - a.score);
+        // 3. 作成回数（count）が多い順にソート
+        candidates.sort((a, b) => b.count - a.count);
 
-        // Pick from the top pool (if multiple have never been cooked or are equally old, add a small randomness)
-        const topScore = candidates[0].score;
-        const topPool = candidates.filter(c => c.score >= topScore - 2 || c.score > 1000); // Pool of oldest or never-cooked
+        // 最も作成回数が多いメニュー群を取得（同率1位が複数ある場合はランダムで1つ選ぶ）
+        const maxCount = candidates[0].count;
+        const topPool = candidates.filter(c => c.count === maxCount);
         const finalSelection = topPool[Math.floor(Math.random() * topPool.length)].item;
 
-        // 4. Fill the input row with the recommendation
+        // 4. 入力欄にセット
         document.getElementById('dishName').value = finalSelection.name;
         if (finalSelection.link) {
             document.getElementById('notionLink').value = finalSelection.link;
@@ -333,7 +338,7 @@
             document.getElementById('linkToggleBtn').classList.remove('active');
         }
 
-        // Highlight input to let user know
+        // ユーザーにサジェストされたことを知らせるためのハイライト効果
         const input = document.getElementById('dishName');
         input.style.backgroundColor = '#fffaf0';
         setTimeout(() => { input.style.backgroundColor = 'white'; }, 500);
