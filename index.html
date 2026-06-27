@@ -321,10 +321,23 @@
         // 3. 作成回数（count）が多い順にソート
         candidates.sort((a, b) => b.count - a.count);
 
-        // 最も作成回数が多いメニュー群を取得（同率1位が複数ある場合はランダムで1つ選ぶ）
-        const maxCount = candidates[0].count;
-        const topPool = candidates.filter(c => c.count === maxCount);
-        const finalSelection = topPool[Math.floor(Math.random() * topPool.length)].item;
+        // 上位5件（候補が少ない場合はその数）をプールとする
+        const poolSize = Math.min(5, candidates.length);
+        const topPool = candidates.slice(0, poolSize);
+        
+        // 現在入力欄に入っているメニュー名を取得（連続で同じものが出るのを防ぐため）
+        const currentInput = document.getElementById('dishName').value;
+        
+        // プールの中から、現在入力されているものと違うものを抽出
+        let availableChoices = topPool.filter(c => c.item.name !== currentInput);
+        
+        // もし候補が1つしかなくてフィルターで消えてしまった場合は元に戻す
+        if (availableChoices.length === 0) {
+            availableChoices = topPool;
+        }
+
+        // 最終的な候補からランダムで1つ選ぶ
+        const finalSelection = availableChoices[Math.floor(Math.random() * availableChoices.length)].item;
 
         // 4. 入力欄にセット
         document.getElementById('dishName').value = finalSelection.name;
